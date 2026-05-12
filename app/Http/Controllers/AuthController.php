@@ -61,7 +61,7 @@ public function register(Request $request) {
             }
 
             if ($user->role === 'admin') {
-                return redirect('/admin/dashboard');
+                return redirect('/admin/index');
             }
 
             // default = pencari

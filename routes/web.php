@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Admin\RestoranController;
 use App\Http\Controllers\Pemilik\TokoController;
+use App\Http\Controllers\Admin\DashboardController;
 
 //HALAMAN UTAMA (GUEST)
 Route::get('/', function () {
@@ -43,9 +44,8 @@ Route::get('/admin/dashboard', function () {
 })->middleware('auth');
 
 // ADMIN
-Route::get('/admin/dashboard', function () {
-    return view('admin.dashboard');
-})->name('admin.dashboard');
+Route::get('/admin/index', [DashboardController::class, 'index'])
+    ->name('admin.index');;
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/restoran',                                 [RestoranController::class, 'list'])->name('restoran.list');
     Route::get('/restoran/export-csv',                      [RestoranController::class, 'exportCsv'])->name('restoran.export');
