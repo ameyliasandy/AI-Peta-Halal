@@ -66,7 +66,7 @@ class AuthController extends Controller
 
             // 🔥 ADMIN
             if ($user->role === 'admin') {
-                return redirect('/admin/dashboard');
+                return redirect('/admin/index');
             }
 
             // 🔥 OWNER
