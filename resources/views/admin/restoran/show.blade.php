@@ -355,15 +355,62 @@ function openEditMenu(id,nama,harga,deskripsi,tersedia){
 }
 
 async function saveMenu(){
-  document.getElementById('mL').style.display='none';document.getElementById('mS').style.display='';
-  const fd=new FormData(document.getElementById('menuF'));
-  const url=editMenuId?`/admin/restoran/${RID}/menu/${editMenuId}`:`/admin/restoran/${RID}/menu`;
-  const d=await fetch(url,{method:'POST',headers:{'X-CSRF-TOKEN':CSRF,'Accept':'application/json'},body:fd}).then(r=>r.json());
-  document.getElementById('mL').style.display='';document.getElementById('mS').style.display='none';
-  if(d.success){
-    showToast(editMenuId?'Menu diperbarui':'Menu ditambahkan','success');
-    closeM('menuM');setTimeout(()=>location.reload(),600);
-  }else showToast('Gagal menyimpan menu','error');
+
+  try{
+
+    document.getElementById('mL').style.display='none';
+    document.getElementById('mS').style.display='';
+
+    const fd = new FormData(document.getElementById('menuF'));
+
+    let url = `/admin/restoran/${RID}/menu`;
+
+    if(editMenuId){
+      url = `/admin/restoran/${RID}/menu/${editMenuId}`;
+      fd.append('_method','PUT');
+    }
+
+    const res = await fetch(url,{
+      method:'POST',
+      headers:{
+        'X-CSRF-TOKEN': CSRF,
+        'Accept':'application/json'
+      },
+      body: fd
+    });
+
+    const text = await res.text();
+
+    console.log(text);
+
+    let d = {};
+
+    try{
+      d = JSON.parse(text);
+    }catch(e){
+      showToast('Server error','error');
+      return;
+    }
+
+    if(d.success){
+      showToast(editMenuId ? 'Menu diperbarui' : 'Menu ditambahkan','success');
+      closeM('menuM');
+      setTimeout(()=>location.reload(),600);
+    }else{
+      showToast(d.message || 'Gagal menyimpan menu','error');
+    }
+
+  }catch(err){
+
+    console.error(err);
+    showToast('Terjadi kesalahan','error');
+
+  }finally{
+
+    document.getElementById('mL').style.display='';
+    document.getElementById('mS').style.display='none';
+
+  }
 }
 
 async function delMenu(id){

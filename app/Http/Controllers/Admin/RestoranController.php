@@ -251,7 +251,7 @@ class RestoranController extends Controller
     {
         $request->validate([
             'nama_menu' => 'required|string|max:150',
-            'harga'     => 'required|integer|min:0',
+            'harga'     => 'required|numeric|min:0',
         ]);
 
         $data = $request->only(['nama_menu', 'deskripsi', 'harga', 'id_kategori', 'tersedia']);

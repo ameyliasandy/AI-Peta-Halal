@@ -23,7 +23,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/login', [AuthController::class, 'showLogin']);
 Route::post('/login', [AuthController::class, 'login']);
 
-Route::post('/logout', [AuthController::class, 'logout']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 //ONBOARDING
 // Guest (tanpa login)
@@ -39,24 +39,21 @@ Route::get('/owner/dashboard', function () {
     return "Dashboard Pemilik Usaha";
 })->middleware('auth');
 
-Route::get('/admin/dashboard', function () {
-    return "Dashboard Admin";
-})->middleware('auth');
 
 // ADMIN
 Route::get('/admin/index', [DashboardController::class, 'index'])
     ->name('admin.index');;
 Route::prefix('admin')->name('admin.')->group(function () {
-    Route::get('/restoran',                                 [RestoranController::class, 'list'])->name('restoran.list');
-    Route::get('/restoran/export-csv',                      [RestoranController::class, 'exportCsv'])->name('restoran.export');
-    Route::post('/restoran',                                [RestoranController::class, 'store'])->name('restoran.store');
-    Route::get('/restoran/{id}',                            [RestoranController::class, 'show'])->name('restoran.show');
-    Route::get('/restoran/{id}/data',                       [RestoranController::class, 'editData'])->name('restoran.data');
-    Route::post('/restoran/{id}/update',                    [RestoranController::class, 'update'])->name('restoran.update');
-    Route::delete('/restoran/{id}',                         [RestoranController::class, 'destroy'])->name('restoran.destroy');
-    Route::post('/restoran/{restoranId}/menu',              [RestoranController::class, 'storeMenu'])->name('menu.store');
-    Route::post('/restoran/{restoranId}/menu/{menuId}',     [RestoranController::class, 'updateMenu'])->name('menu.update');
-    Route::delete('/restoran/{restoranId}/menu/{menuId}',   [RestoranController::class, 'destroyMenu'])->name('menu.destroy');
+    Route::get('/restoran',                                     [RestoranController::class, 'list'])->name('restoran.list');
+    Route::get('/restoran/export-csv',                          [RestoranController::class, 'exportCsv'])->name('restoran.export');
+    Route::post('/restoran',                                    [RestoranController::class, 'store'])->name('restoran.store');
+    Route::get('/restoran/{id}',                                [RestoranController::class, 'show'])->name('restoran.show');
+    Route::get('/restoran/{id}/data',                           [RestoranController::class, 'editData'])->name('restoran.data');
+    Route::post('/restoran/{id}/update',                        [RestoranController::class, 'update'])->name('restoran.update');
+    Route::delete('/restoran/{id}',                             [RestoranController::class, 'destroy'])->name('restoran.destroy');
+    Route::post('/restoran/{restoranId}/menu', [RestoranController::class, 'storeMenu']);
+    Route::put('/restoran/{restoranId}/menu/{menuId}', [RestoranController::class, 'updateMenu']);
+    Route::delete('/restoran/{restoranId}/menu/{menuId}', [RestoranController::class, 'destroyMenu']);
 });
  
 // PEMILIK
