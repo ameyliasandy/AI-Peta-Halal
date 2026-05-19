@@ -44,7 +44,7 @@
     </div>
 
 <!-- hidden input -->
-<input type="hidden" name="kategori[]" id="selected">
+<div id="hidden-inputs"></div>
 
     <button id="submitBtn"
         class="w-full bg-gray-300 text-white py-2 rounded-full cursor-not-allowed" disabled>
@@ -58,38 +58,70 @@
 let selected = [];
 
 function toggle(el){
+
     let value = el.innerText;
 
+    // 🔥 remove pilihan
     if(selected.includes(value)){
-        // remove
+
         selected = selected.filter(v => v !== value);
+
         el.classList.remove('bg-green-600','text-white');
+
     } else {
-        // limit 3
+
+        // 🔥 limit 3
         if(selected.length >= 3){
             alert("Maksimal hanya 3 pilihan!");
             return;
         }
 
         selected.push(value);
+
         el.classList.add('bg-green-600','text-white');
     }
 
-    // update counter
-    document.getElementById('counter').innerText = selected.length + "/3 dipilih";
+    // 🔥 update counter
+    document.getElementById('counter').innerText =
+        selected.length + "/3 dipilih";
 
-    // update hidden input
-    document.getElementById('selected').value = selected;
+    // 🔥 hidden inputs
+    let hiddenContainer =
+        document.getElementById('hidden-inputs');
 
+    hiddenContainer.innerHTML = '';
+
+    selected.forEach(item => {
+
+        hiddenContainer.innerHTML += `
+            <input type="hidden"
+                   name="kategori[]"
+                   value="${item}">
+        `;
+    });
+
+    // 🔥 tombol
     let btn = document.getElementById('submitBtn');
 
     if(selected.length === 3){
+
         btn.disabled = false;
-        btn.classList.remove('bg-gray-300','cursor-not-allowed');
+
+        btn.classList.remove(
+            'bg-gray-300',
+            'cursor-not-allowed'
+        );
+
         btn.classList.add('bg-green-600');
+
     } else {
+
         btn.disabled = true;
-        btn.classList.add('bg-gray-300','cursor-not-allowed');
+
+        btn.classList.add(
+            'bg-gray-300',
+            'cursor-not-allowed'
+        );
     }
 }
 </script>

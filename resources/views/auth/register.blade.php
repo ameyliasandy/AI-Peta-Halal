@@ -1,100 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Registrasi</title>
-<script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {{ request('role') == 'pemilik_usaha'
+            ? 'Daftarkan Usaha - Petha'
+            : 'Registrasi - Petha'
+        }}
+    </title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
-<body class="bg-green-700 min-h-screen flex items-center justify-center">
+<body class="bg-green-700 h-screen flex items-center justify-center px-4 overflow-hidden">
 
-<div class="w-full max-w-md px-4">
+    <!-- WRAPPER -->
+    <div class="w-full max-w-[320px] sm:max-w-[340px]">
 
-    <!-- LOGO -->
-    <div class="text-center mb-6 text-white">
-        <div class="flex justify-center mb-2">
-            <!-- icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3v10M12 3v10m4-10v10M5 21h14" />
-            </svg>
+        <!-- LOGO -->
+        <div class="text-center text-white mb-5">
+
+            <div class="flex justify-center mb-2">
+                <div class="w-11 h-11 rounded-full border-2 border-white flex items-center justify-center">
+                    <i class="fa-solid fa-utensils text-sm"></i>
+                </div>
+            </div>
+
+            <h1 class="text-2xl sm:text-3xl font-semibold tracking-wide">
+                Petha
+            </h1>
+
         </div>
-        <h1 class="text-3xl font-semibold">Petha</h1>
-    </div>
 
-    <!-- CARD -->
-    <div class="bg-gray-100 rounded-3xl shadow-lg p-6 sm:p-8">
+        <!-- CARD -->
+        <div class="bg-[#F5F5F5] rounded-[28px] shadow-lg px-5 py-6 sm:px-6">
 
-        <h2 class="text-3xl font-bold text-green-700 text-center mb-6">
-            Registrasi
-        </h2>
+            <!-- TITLE -->
+            <h2 class="text-2xl sm:text-[30px] font-bold text-[#2D6A4F] text-center mb-2">
 
-        <form method="POST" action="/register" class="space-y-5">
-            @csrf
+                {{ request('role') == 'pemilik_usaha'
+                    ? 'Daftarkan Usaha'
+                    : 'Registrasi'
+                }}
 
-            <!-- Nama -->
-            <div class="flex items-center border-b-2 border-green-300">
-                <span class="mr-3 text-green-600">
-                    👤
-                </span>
-                <input name="name" placeholder="Nama Pengguna"
-                    class="w-full bg-transparent p-2 focus:outline-none">
-            </div>
+            </h2>
 
-            <!-- Email -->
-            <div class="flex items-center border-b-2 border-green-300">
-                <span class="mr-3 text-green-600">
-                    ✉️
-                </span>
-                <input name="email" placeholder="Email"
-                    class="w-full bg-transparent p-2 focus:outline-none">
-            </div>
+            <!-- SUBTITLE -->
+            <p class="text-center text-gray-500 text-xs sm:text-sm mb-6">
 
-            <!-- Password -->
-            <div class="flex items-center border-b-2 border-green-300">
-                <span class="mr-3 text-green-600">
-                    🔒
-                </span>
-                <input type="password" name="password" placeholder="Kata Sandi"
-                    class="w-full bg-transparent p-2 focus:outline-none">
-            </div>
+                {{ request('role') == 'pemilik_usaha'
+                    ? 'Bergabung sebagai mitra kuliner halal'
+                    : 'Temukan makanan halal favoritmu'
+                }}
 
-            <!-- Confirm -->
-            <div class="flex items-center border-b-2 border-green-300">
-                <span class="mr-3 text-green-600">
-                    🔐
-                </span>
-                <input type="password" name="password_confirmation" placeholder="Konfirmasi Password"
-                    class="w-full bg-transparent p-2 focus:outline-none">
-            </div>
-
-            <!-- No HP -->
-            <div class="flex items-center border-b-2 border-green-300">
-                <span class="mr-3 text-green-600">
-                    📞
-                </span>
-                <input name="no_hp" placeholder="Nomor Handphone"
-                    class="w-full bg-transparent p-2 focus:outline-none">
-            </div>
-
-            <!-- ROLE -->
-            <input type="hidden" name="role" value="{{ request('role') ?? 'pencari' }}">
-
-            <!-- BUTTON -->
-            <button class="w-full bg-green-600 text-white py-3 rounded-full font-semibold hover:bg-green-700 transition">
-                Daftar
-            </button>
-
-            <!-- LOGIN LINK -->
-            <p class="text-center text-sm mt-2">
-                Sudah Memiliki Akun?
-                <a href="/login" class="text-green-700 font-semibold">Log in</a>
             </p>
 
-        </form>
+            <!-- SUCCESS -->
+            @if(session('success'))
+                <div class="bg-green-100 text-green-700 text-xs sm:text-sm px-3 py-2 rounded-xl mb-4">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            <!-- ERROR -->
+            @if($errors->any())
+                <div class="bg-red-100 text-red-700 text-xs sm:text-sm px-3 py-2 rounded-xl mb-4">
+                    <ul class="list-disc pl-4">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <!-- FORM -->
+            <form method="POST" action="/register" class="space-y-5">
+
+                @csrf
+
+                <!-- NAMA -->
+                <div class="flex items-center border-b border-green-400 pb-2">
+
+                    <i class="fa-regular fa-user text-[#2D6A4F] text-sm w-5"></i>
+
+                    <input
+                        type="text"
+                        name="name"
+                        value="{{ old('name') }}"
+                        placeholder="{{ request('role') == 'pemilik_usaha'
+                            ? 'Nama Pemilik / Nama Usaha'
+                            : 'Nama Pengguna'
+                        }}"
+                        class="w-full bg-transparent px-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none"
+                    >
+                </div>
+
+                <!-- EMAIL -->
+                <div class="flex items-center border-b border-green-400 pb-2">
+
+                    <i class="fa-regular fa-envelope text-[#2D6A4F] text-sm w-5"></i>
+
+                    <input
+                        type="email"
+                        name="email"
+                        value="{{ old('email') }}"
+                        placeholder="Email"
+                        class="w-full bg-transparent px-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none"
+                    >
+                </div>
+
+                <!-- PASSWORD -->
+                <div class="flex items-center border-b border-green-400 pb-2">
+
+                    <i class="fa-solid fa-lock text-[#2D6A4F] text-sm w-5"></i>
+
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="Kata Sandi"
+                        class="w-full bg-transparent px-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none"
+                    >
+                </div>
+
+                <!-- CONFIRM PASSWORD -->
+                <div class="flex items-center border-b border-green-400 pb-2">
+
+                    <i class="fa-solid fa-check text-[#2D6A4F] text-sm w-5"></i>
+
+                    <input
+                        type="password"
+                        name="password_confirmation"
+                        placeholder="Konfirmasi Password"
+                        class="w-full bg-transparent px-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none"
+                    >
+                </div>
+
+                <!-- NO HP -->
+                <div class="flex items-center border-b border-green-400 pb-2">
+
+                    <i class="fa-solid fa-phone text-[#2D6A4F] text-sm w-5"></i>
+
+                    <input
+                        type="text"
+                        name="no_hp"
+                        value="{{ old('no_hp') }}"
+                        placeholder="Nomor Handphone"
+                        class="w-full bg-transparent px-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none"
+                    >
+                </div>
+
+                <!-- ROLE -->
+                <input
+                    type="hidden"
+                    name="role"
+                    value="{{ request('role') ?? 'pencari' }}"
+                >
+
+                <!-- BUTTON -->
+                <button
+                    type="submit"
+                    class="w-full bg-[#3FA34D] hover:bg-green-700 transition text-white py-2.5 rounded-full font-semibold text-sm shadow-sm"
+                >
+
+                    {{ request('role') == 'pemilik_usaha'
+                        ? 'Daftarkan Usaha'
+                        : 'Daftar'
+                    }}
+
+                </button>
+
+                <!-- LOGIN -->
+                <p class="text-center text-xs sm:text-sm text-gray-700">
+
+                    Sudah Memiliki Akun?
+
+                    <a href="/login"
+                    class="text-[#2D6A4F] font-semibold hover:underline">
+                        Log in
+                    </a>
+
+                </p>
+
+            </form>
+
+        </div>
 
     </div>
-</div>
 
 </body>
 </html>
