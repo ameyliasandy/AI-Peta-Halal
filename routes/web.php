@@ -7,6 +7,9 @@ use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Admin\RestoranController;
 use App\Http\Controllers\Pemilik\TokoController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Pemilik\PemilikController;
+use App\Http\Controllers\Pemilik\DaftarUsahaController;
+
 
 //HALAMAN UTAMA (GUEST)
 Route::get('/', function () {
@@ -35,14 +38,9 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware('auth');
 
-Route::get('/owner/dashboard', function () {
-    return "Dashboard Pemilik Usaha";
-})->middleware('auth');
-
-
 // ADMIN
 Route::get('/admin/index', [DashboardController::class, 'index'])
-    ->name('admin.index');;
+->middleware('auth')->name('admin.index');;
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/restoran',                                     [RestoranController::class, 'list'])->name('restoran.list');
     Route::get('/restoran/export-csv',                          [RestoranController::class, 'exportCsv'])->name('restoran.export');
@@ -56,14 +54,33 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::delete('/restoran/{restoranId}/menu/{menuId}', [RestoranController::class, 'destroyMenu']);
 });
  
-// PEMILIK
-Route::prefix('pemilik')->name('pemilik.')->group(function () {
-    Route::get('/toko',                         [TokoController::class, 'index'])->name('toko.index');
-    Route::get('/toko/profil',                  [TokoController::class, 'getProfil'])->name('toko.profil');
-    Route::post('/toko/profil',                 [TokoController::class, 'updateProfil'])->name('toko.profil.update');
-    Route::post('/toko/toggle-buka',            [TokoController::class, 'toggleBuka'])->name('toko.toggle');
-    Route::post('/toko/menu',                   [TokoController::class, 'storeMenu'])->name('menu.store');
-    Route::post('/toko/menu/{id}',              [TokoController::class, 'updateMenu'])->name('menu.update');
-    Route::delete('/toko/menu/{id}',            [TokoController::class, 'destroyMenu'])->name('menu.destroy');
-    Route::post('/toko/menu/{id}/toggle',       [TokoController::class, 'toggleMenu'])->name('menu.toggle');
+// ─── PEMILIK ────────────────────────────────────────────────────────────────
+Route::prefix('pemilik')
+    ->middleware('auth')
+    ->name('pemilik.')
+    ->group(function () {
+
+    Route::get('/dashboard', function () {
+        return view('pemilik.dashboard');
+    })->name('dashboard');
+
+    // ── Toko (DaftarUsahaController — registrasi & list) ──────────────────
+    Route::get('/toko',             [DaftarUsahaController::class, 'index'])  ->name('toko.index');
+    Route::get('/toko/create',      [DaftarUsahaController::class, 'create']) ->name('toko.create');
+    Route::post('/toko',            [DaftarUsahaController::class, 'store'])  ->name('toko.store');
+    Route::get('/toko/{id}',        [DaftarUsahaController::class, 'show'])   ->name('toko.show');
+    Route::get('/toko/{id}/edit',   [DaftarUsahaController::class, 'edit'])   ->name('toko.edit');
+    Route::put('/toko/{id}',        [DaftarUsahaController::class, 'update']) ->name('toko.update');
+    Route::delete('/toko/{id}',     [DaftarUsahaController::class, 'destroy'])->name('toko.destroy');
+
+    // ── Toko aktif pemilik (TokoController) ───────────────────────────────
+    Route::post('/toko/update',      [TokoController::class, 'updateProfil']) ->name('toko.update-profil');
+    Route::post('/toko/toggle-buka', [TokoController::class, 'toggleBuka'])  ->name('toko.toggle-buka');
+
+    // ── Menu (TokoController) ─────────────────────────────────────────────
+    Route::post('/toko/menu',          [TokoController::class, 'storeMenu'])  ->name('toko.menu.store');
+    Route::post('/toko/menu/{id}',     [TokoController::class, 'updateMenu']) ->name('toko.menu.update');
+    Route::delete('/toko/menu/{id}',   [TokoController::class, 'destroyMenu'])->name('toko.menu.destroy');
+    Route::post('/toko/menu/{id}/toggle', [TokoController::class, 'toggleMenu'])->name('toko.menu.toggle');
+
 });

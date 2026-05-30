@@ -71,7 +71,7 @@ class AuthController extends Controller
 
             // 🔥 OWNER
             if ($user->role === 'pemilik_usaha') {
-                return redirect('/owner/dashboard');
+                return redirect('/pemilik/dashboard');
             }
 
             // 🔥 CEK ONBOARDING USER

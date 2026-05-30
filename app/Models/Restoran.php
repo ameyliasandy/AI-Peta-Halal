@@ -8,13 +8,27 @@ class Restoran extends Model
     protected $table = 'restoran';
     protected $primaryKey = 'id_restoran';
     protected $fillable = [
-        'id_pemilik', 'id_kategori', 'id_sub_kategori',
-        'nama_restoran', 'deskripsi', 'alamat',
-        'kecamatan_kelurahan', 'kota', 'provinsi', 'kode_pos',
-        'latitude', 'longitude', 'jam_operasional', 'kapasitas_tempat',
-        'harga_rata_rata_min', 'harga_rata_rata_max',
-        'no_telepon', 'email_usaha', 'website_sosmed',
-        'foto_utama', 'status_halal', 'status_buka'
+        'nama_restoran',
+        'id_pemilik',
+        'id_kategori',
+        'id_sub_kategori',
+        'alamat',
+        'kecamatan_kelurahan',
+        'kota',
+        'provinsi',
+        'kode_pos',
+        'jam_operasional',
+        'deskripsi',
+        'status_halal',
+        'foto_utama',
+        'harga_rata_rata_min',
+        'harga_rata_rata_max',
+        'kapasitas_tempat',
+        'latitude',
+        'longitude',
+        'no_telepon',
+        'email_usaha',
+        'website_sosmed'
     ];
  
     protected $casts = [
