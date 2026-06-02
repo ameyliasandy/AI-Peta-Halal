@@ -149,8 +149,8 @@
 
                     <input
                         type="text"
-                        name="no_hp"
-                        value="{{ old('no_hp') }}"
+                        name="no_telepon"
+                        value="{{ old('no_telepon') }}"
                         placeholder="Nomor Handphone"
                         class="w-full bg-transparent px-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none"
                     >

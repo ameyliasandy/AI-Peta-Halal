@@ -152,26 +152,26 @@
         </div>
 
         <div class="py-2">
-            <a href="#" class="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition">
+            <a href="{{ route('profile.index') }}" class="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition">
                 <span class="text-[#2D6A4F] text-xl">👤</span>
                 <span class="font-semibold text-gray-800">Profil Saya</span>
             </a>
-            <a href="#" class="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition">
+            <a href="{{ route('profile.favorit') }}" class="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition">
                 <span class="text-[#2D6A4F] text-xl">⭐</span>
                 <span class="font-semibold text-gray-800">Favorit</span>
             </a>
-            <a href="#" class="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition">
+            <a href="{{ route('profile.preferensi') }}" class="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition">
                 <span class="text-[#2D6A4F] text-xl">🍽️</span>
                 <span class="font-semibold text-gray-800">Preferensi Makanan</span>
             </a>
-            <a href="#" class="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition">
+            <a href="{{ route('profile.pengaturan') }}" class="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition">
                 <span class="text-[#2D6A4F] text-xl">⚙️</span>
                 <span class="font-semibold text-gray-800">Pengaturan</span>
             </a>
         </div>
 
         <div class="border-t border-gray-100 py-2">
-            <form method="POST" action="/logout">
+            <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit"
                     class="w-full flex items-center gap-4 px-5 py-3 hover:bg-red-50 transition text-left">

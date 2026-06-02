@@ -7,6 +7,7 @@ use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Admin\RestoranController;
 use App\Http\Controllers\Pemilik\TokoController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\ProfileController;
 
 //HALAMAN UTAMA (GUEST)
 Route::get('/', function () {
@@ -66,4 +67,26 @@ Route::prefix('pemilik')->name('pemilik.')->group(function () {
     Route::post('/toko/menu/{id}',              [TokoController::class, 'updateMenu'])->name('menu.update');
     Route::delete('/toko/menu/{id}',            [TokoController::class, 'destroyMenu'])->name('menu.destroy');
     Route::post('/toko/menu/{id}/toggle',       [TokoController::class, 'toggleMenu'])->name('menu.toggle');
+});
+
+Route::middleware('auth')->group(function () {
+
+    // Profil
+    Route::get('/profile',           [ProfileController::class, 'index'])->name('profile.index');
+    Route::post('/profile',          [ProfileController::class, 'updateProfil'])->name('profile.update');
+    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::delete('/profile/hapus',  [ProfileController::class, 'hapusAkun'])->name('profile.hapus');
+
+    // Favorit
+    Route::get('/favorit',              [ProfileController::class, 'favorit'])->name('profile.favorit');
+    Route::delete('/favorit/{id}',      [ProfileController::class, 'hapusFavorit'])->name('profile.favorit.hapus');
+
+    // Preferensi
+    Route::get('/preferensi',           [ProfileController::class, 'preferensi'])->name('profile.preferensi');
+    Route::post('/preferensi',          [ProfileController::class, 'updatePreferensi'])->name('profile.preferensi.update');
+
+    // Pengaturan
+    Route::get('/pengaturan',           [ProfileController::class, 'pengaturan'])->name('profile.pengaturan');
+    Route::post('/pengaturan',          [ProfileController::class, 'updatePengaturan'])->name('profile.pengaturan.update');
+
 });
