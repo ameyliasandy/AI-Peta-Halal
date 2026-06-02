@@ -8,6 +8,8 @@ use App\Http\Controllers\Admin\RestoranController;
 use App\Http\Controllers\Pemilik\TokoController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Pemilik\PemilikController;
+use App\Http\Controllers\Pemilik\DaftarUsahaController;
 
 //HALAMAN UTAMA (GUEST)
 Route::get('/', function () {
@@ -36,14 +38,9 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware('auth');
 
-Route::get('/owner/dashboard', function () {
-    return "Dashboard Pemilik Usaha";
-})->middleware('auth');
-
-
 // ADMIN
 Route::get('/admin/index', [DashboardController::class, 'index'])
-    ->name('admin.index');;
+->middleware('auth')->name('admin.index');;
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/restoran',                                     [RestoranController::class, 'list'])->name('restoran.list');
     Route::get('/restoran/export-csv',                          [RestoranController::class, 'exportCsv'])->name('restoran.export');
@@ -57,36 +54,65 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::delete('/restoran/{restoranId}/menu/{menuId}', [RestoranController::class, 'destroyMenu']);
 });
  
-// PEMILIK
-Route::prefix('pemilik')->name('pemilik.')->group(function () {
-    Route::get('/toko',                         [TokoController::class, 'index'])->name('toko.index');
-    Route::get('/toko/profil',                  [TokoController::class, 'getProfil'])->name('toko.profil');
-    Route::post('/toko/profil',                 [TokoController::class, 'updateProfil'])->name('toko.profil.update');
-    Route::post('/toko/toggle-buka',            [TokoController::class, 'toggleBuka'])->name('toko.toggle');
-    Route::post('/toko/menu',                   [TokoController::class, 'storeMenu'])->name('menu.store');
-    Route::post('/toko/menu/{id}',              [TokoController::class, 'updateMenu'])->name('menu.update');
-    Route::delete('/toko/menu/{id}',            [TokoController::class, 'destroyMenu'])->name('menu.destroy');
-    Route::post('/toko/menu/{id}/toggle',       [TokoController::class, 'toggleMenu'])->name('menu.toggle');
+// ─── PEMILIK ────────────────────────────────────────────────────────────────
+Route::prefix('pemilik')
+    ->middleware('auth')
+    ->name('pemilik.')
+    ->group(function () {
+
+    Route::get('/dashboard', function () {
+        return view('pemilik.dashboard');
+    })->name('dashboard');
+
+    // ── Toko (DaftarUsahaController) ──────────────────────────
+    Route::get('/toko',             [DaftarUsahaController::class, 'index'])->name('toko.index');
+    Route::get('/toko/create',      [DaftarUsahaController::class, 'create'])->name('toko.create');
+    Route::post('/toko',            [DaftarUsahaController::class, 'store'])->name('toko.store');
+    Route::get('/toko/{id}',        [DaftarUsahaController::class, 'show'])->name('toko.show');
+    Route::get('/toko/{id}/edit',   [DaftarUsahaController::class, 'edit'])->name('toko.edit');
+    Route::put('/toko/{id}',        [DaftarUsahaController::class, 'update'])->name('toko.update');
+    Route::delete('/toko/{id}',     [DaftarUsahaController::class, 'destroy'])->name('toko.destroy');
+
+    // ── Profil toko (TokoController) ─────────────────────────
+    Route::get('/toko/profil', [TokoController::class, 'getProfil'])->name('toko.profil');
+    Route::post('/toko/profil', [TokoController::class, 'updateProfil'])->name('toko.profil.update');
+
+    // ── Status buka/tutup ────────────────────────────────────
+    Route::post('/toko/toggle-buka', [TokoController::class, 'toggleBuka'])
+        ->name('toko.toggle-buka');
+
+    // ── Menu ─────────────────────────────────────────────────
+    Route::post('/toko/menu', [TokoController::class, 'storeMenu'])
+        ->name('toko.menu.store');
+
+    Route::post('/toko/menu/{id}', [TokoController::class, 'updateMenu'])
+        ->name('toko.menu.update');
+
+    Route::delete('/toko/menu/{id}', [TokoController::class, 'destroyMenu'])
+        ->name('toko.menu.destroy');
+
+    Route::post('/toko/menu/{id}/toggle', [TokoController::class, 'toggleMenu'])
+        ->name('toko.menu.toggle');
 });
 
+// ─── PROFILE USER ───────────────────────────────────────────────────────────
 Route::middleware('auth')->group(function () {
 
     // Profil
-    Route::get('/profile',           [ProfileController::class, 'index'])->name('profile.index');
-    Route::post('/profile',          [ProfileController::class, 'updateProfil'])->name('profile.update');
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::post('/profile', [ProfileController::class, 'updateProfil'])->name('profile.update');
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
-    Route::delete('/profile/hapus',  [ProfileController::class, 'hapusAkun'])->name('profile.hapus');
+    Route::delete('/profile/hapus', [ProfileController::class, 'hapusAkun'])->name('profile.hapus');
 
     // Favorit
-    Route::get('/favorit',              [ProfileController::class, 'favorit'])->name('profile.favorit');
-    Route::delete('/favorit/{id}',      [ProfileController::class, 'hapusFavorit'])->name('profile.favorit.hapus');
+    Route::get('/favorit', [ProfileController::class, 'favorit'])->name('profile.favorit');
+    Route::delete('/favorit/{id}', [ProfileController::class, 'hapusFavorit'])->name('profile.favorit.hapus');
 
     // Preferensi
-    Route::get('/preferensi',           [ProfileController::class, 'preferensi'])->name('profile.preferensi');
-    Route::post('/preferensi',          [ProfileController::class, 'updatePreferensi'])->name('profile.preferensi.update');
+    Route::get('/preferensi', [ProfileController::class, 'preferensi'])->name('profile.preferensi');
+    Route::post('/preferensi', [ProfileController::class, 'updatePreferensi'])->name('profile.preferensi.update');
 
     // Pengaturan
-    Route::get('/pengaturan',           [ProfileController::class, 'pengaturan'])->name('profile.pengaturan');
-    Route::post('/pengaturan',          [ProfileController::class, 'updatePengaturan'])->name('profile.pengaturan.update');
-
+    Route::get('/pengaturan', [ProfileController::class, 'pengaturan'])->name('profile.pengaturan');
+    Route::post('/pengaturan', [ProfileController::class, 'updatePengaturan'])->name('profile.pengaturan.update');
 });

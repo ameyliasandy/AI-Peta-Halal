@@ -1,4 +1,4 @@
-@extends('admin.layout')
+@extends('layouts.admin')
 @section('title','List Usaha Halal')
 
 @push('styles')
@@ -265,7 +265,7 @@ textarea{resize:vertical;min-height:68px}
     </div>
 
     <div class="modal-body">
-      {{-- STEPS --}}
+      {{-- STEP INDICATOR --}}
       <div class="steps">
         <div class="si on" id="s1" onclick="gS(1)"><div class="sn">1</div>Info Dasar</div>
         <div class="si"    id="s2" onclick="gS(2)"><div class="sn">2</div>Lokasi & Kontak</div>
@@ -278,256 +278,31 @@ textarea{resize:vertical;min-height:68px}
 
         {{-- STEP 1 --}}
         <div class="sp on" id="p1">
-          <div class="fsec">
-            <div class="ft">Informasi Dasar Usaha</div>
-            <div class="g2">
-              <div class="fg">
-                <label>Nama Usaha <span class="req">*</span></label>
-                <input type="text" name="nama_restoran" required placeholder="Sesuai sertifikat halal">
-              </div>
-              <div class="fg">
-                <label>Jenis Usaha <span class="req">*</span></label>
-                <select name="id_kategori" id="katSel" onchange="loadSub()" required>
-                  <option value="">Pilih kategori</option>
-                  @foreach($kategori as $k)
-                    <option value="{{ $k->id_kategori }}" data-subs='{{ $k->subKategori->toJson() }}'>{{ $k->nama_kategori }}</option>
-                  @endforeach
-                </select>
-              </div>
-              <div class="fg">
-                <label>Sub Kategori</label>
-                <select name="id_sub_kategori" id="subSel">
-                  <option value="">Pilih jenis usaha dulu</option>
-                </select>
-              </div>
-              <div class="fg">
-                <label>Kapasitas Tempat Duduk</label>
-                <input type="number" name="kapasitas_tempat" placeholder="50" min="0">
-              </div>
-              <div class="fg">
-                <label>Jam Operasional <span class="req">*</span></label>
-                <input type="text" name="jam_operasional" required placeholder="08:00 - 21:00">
-              </div>
-              <div class="fg">
-                <label>Pemilik Usaha <span class="req">*</span></label>
-                <select name="id_pemilik" required>
-                  <option value="">Pilih pemilik</option>
-                  @foreach($pemilik as $pm)
-                    {{-- ✅ FIX: User model pakai $pm->id dan $pm->name --}}
-                    <option value="{{ $pm->id }}">{{ $pm->name }} {{ $pm->no_hp ? '('.$pm->no_hp.')' : '' }}</option>
-                  @endforeach
-                </select>
-              </div>
-              <div class="fg" style="grid-column:1/-1">
-                <label>Deskripsi Singkat</label>
-                <textarea name="deskripsi" placeholder="Maksimal 200 karakter" maxlength="200"></textarea>
-              </div>
-              <div class="fg">
-                <label>Harga Min (Rp)</label>
-                <input type="number" name="harga_rata_rata_min" placeholder="15000" min="0">
-              </div>
-              <div class="fg">
-                <label>Harga Max (Rp)</label>
-                <input type="number" name="harga_rata_rata_max" placeholder="50000" min="0">
-              </div>
-              <div class="fg" style="grid-column:1/-1">
-                <label>Foto Utama Toko</label>
-                <input type="file" name="foto_utama" accept="image/*">
-              </div>
-            </div>
-          </div>
+          @include('form_nambah_usaha.info_dasar', ['isAdmin' => true])
         </div>
 
         {{-- STEP 2 --}}
         <div class="sp" id="p2">
-          <div class="fsec">
-            <div class="ft">Lokasi Usaha</div>
-            <div class="g2">
-              <div class="fg" style="grid-column:1/-1">
-                <label>Alamat Lengkap <span class="req">*</span></label>
-                <input type="text" name="alamat" required placeholder="Nama jalan, nomor, RT/RW, dll">
-              </div>
-
-              {{-- ✅ DROPDOWN KECAMATAN BATAM --}}
-              <div class="fg">
-                <label>Kecamatan</label>
-                <select name="kecamatan_kelurahan" id="kecamatanSel" onchange="loadKelurahan()">
-                  <option value="">Pilih Kecamatan</option>
-                  <option value="Batam Kota">Batam Kota</option>
-                  <option value="Batu Aji">Batu Aji</option>
-                  <option value="Batu Ampar">Batu Ampar</option>
-                  <option value="Bengkong">Bengkong</option>
-                  <option value="Bulang">Bulang</option>
-                  <option value="Galang">Galang</option>
-                  <option value="Lubuk Baja">Lubuk Baja</option>
-                  <option value="Nongsa">Nongsa</option>
-                  <option value="Sagulung">Sagulung</option>
-                  <option value="Sei Beduk">Sei Beduk</option>
-                  <option value="Sekupang">Sekupang</option>
-                  <option value="Belakang Padang">Belakang Padang</option>
-                </select>
-              </div>
-
-              {{-- ✅ DROPDOWN KELURAHAN BATAM (dinamis berdasarkan kecamatan) --}}
-              <div class="fg">
-                <label>Kelurahan</label>
-                <select name="kelurahan" id="kelurahanSel">
-                  <option value="">Pilih kecamatan dulu</option>
-                </select>
-              </div>
-
-              {{-- ✅ KOTA OTOMATIS BATAM --}}
-              <div class="fg">
-                <label>Kota</label>
-                <input type="text" name="kota" id="kotaInput" value="Batam" readonly
-                       style="background:var(--s1);color:var(--s6);cursor:default">
-              </div>
-
-              {{-- ✅ PROVINSI OTOMATIS --}}
-              <div class="fg">
-                <label>Provinsi</label>
-                <input type="text" name="provinsi" value="Kepulauan Riau" readonly
-                       style="background:var(--s1);color:var(--s6);cursor:default">
-              </div>
-
-              <div class="fg">
-                <label>Kode Pos</label>
-                <input type="text" name="kode_pos" id="kodePosInput" placeholder="29xxx">
-              </div>
-              <div class="fg">
-                <label>Latitude</label>
-                <input type="number" name="latitude" step="any" placeholder="1.129000">
-              </div>
-              <div class="fg">
-                <label>Longitude</label>
-                <input type="number" name="longitude" step="any" placeholder="104.029000">
-              </div>
-            </div>
-          </div>
-          <div class="fsec">
-            <div class="ft">Kontak Usaha</div>
-            <div class="g2">
-              <div class="fg">
-                <label>No. Telepon</label>
-                <input type="tel" name="no_telepon" placeholder="08xx-xxxx-xxxx">
-              </div>
-              <div class="fg">
-                <label>Email Usaha</label>
-                <input type="email" name="email_usaha">
-              </div>
-              <div class="fg">
-                <label>Website / Media Sosial</label>
-                <input type="text" name="website_sosmed" placeholder="instagram.com/nama_toko">
-              </div>
-            </div>
-          </div>
+          @include('form_nambah_usaha.lokasi', ['isAdmin' => true])
         </div>
 
-        {{-- STEP 3 --}}
+        {{-- STEP 3 — versi admin (termasuk keputusan verifikasi) --}}
         <div class="sp" id="p3">
-          <div class="fsec">
-            <div class="ft">Status Sertifikat Halal</div>
-            <div class="fg" style="max-width:320px">
-              <label>Apakah usaha sudah memiliki sertifikat?</label>
-              <select name="has_sertifikat" id="hasSert" onchange="togSert()">
-                <option value="">Pilih Ya / Tidak</option>
-                <option value="ya">Ya</option>
-                <option value="tidak">Tidak</option>
-              </select>
-              <span class="hint">Jika Tidak, proses verifikasi memakan waktu lebih lama</span>
-            </div>
-          </div>
-
-          <div class="fsec" id="sertSec" style="display:none">
-            <div class="ft">Sertifikat Halal</div>
-            <div class="g3">
-              <div class="fg">
-                <label>No. Sertifikat</label>
-                <input type="text" name="no_sertifikat" placeholder="MUI-XXXX-XXXXXX">
-              </div>
-              <div class="fg">
-                <label>Lembaga Penerbit</label>
-                <input type="text" name="lembaga_penerbit" placeholder="MUI / BPJPH">
-              </div>
-              <div class="fg">
-                <label>Masa Berlaku</label>
-                <input type="date" name="masa_berlaku">
-              </div>
-              <div class="fg" style="grid-column:1/-1">
-                <label>Unggah Dokumen Sertifikat</label>
-                <input type="file" name="dokumen_sertifikat" accept=".pdf,image/*">
-              </div>
-            </div>
-          </div>
-
-          <div class="fsec" id="alasanSec" style="display:none">
-            <div class="ft">Alasan Halal</div>
-            <div class="alert-w">Centang persyaratan yang telah dipenuhi. Item <strong>*</strong> wajib agar usaha dapat ditampilkan.</div>
-            <p style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--s7)">A. Bahan baku & produk</p>
-            <div class="chk-wrap" style="margin-bottom:14px">
-              <label class="ci"><input type="checkbox" name="bebas_babi" value="1"><div><div class="ct">Seluruh bahan baku bebas dari babi & turunannya <strong>*</strong></div><div class="cs">Termasuk gelatin, lard, bahan penolong dari babi</div></div></label>
-              <label class="ci"><input type="checkbox" name="daging_halal" value="1"><div><div class="ct">Daging/unggas berasal dari pemotongan halal <strong>*</strong></div><div class="cs">Ada bukti atau nota pembelian dari RPH/penjual bersertifikat</div></div></label>
-              <label class="ci"><input type="checkbox" name="bumbu_bebas_alkohol" value="1"><div><div class="ct">Bumbu & bahan tambahan bebas alkohol <strong>*</strong></div><div class="cs">Termasuk vanila extract, wine untuk masak, sake</div></div></label>
-              <label class="ci"><input type="checkbox" name="kemasan_halal" value="1"><div><div class="ct">Produk kemasan yang digunakan berlabel halal</div><div class="cs">Saus, kecap, margarin, dan bahan kemasan lainnya</div></div></label>
-            </div>
-            <p style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--s7)">B. Peralatan & fasilitas</p>
-            <div class="chk-wrap" style="margin-bottom:14px">
-              <label class="ci"><input type="checkbox" name="peralatan_tidak_najis" value="1"><div><div class="ct">Peralatan masak tidak terkontaminasi najis <strong>*</strong></div><div class="cs">Wajan, pisau, talenan, dan wadah digunakan khusus untuk bahan halal</div></div></label>
-              <label class="ci"><input type="checkbox" name="tidak_jual_alkohol" value="1"><div><div class="ct">Tidak menjual minuman beralkohol <strong>*</strong></div><div class="cs">Termasuk bir, wine, dan minuman berkadar alkohol di atas 0.5%</div></div></label>
-            </div>
-            <p style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--s7)">C. Kebersihan & higienitas</p>
-            <div class="chk-wrap">
-              <label class="ci"><input type="checkbox" name="dapur_bersih" value="1"><div><div class="ct">Dapur bersih dan bebas hama <strong>*</strong></div><div class="cs">Lantai, permukaan dapur, dan area pengolahan dalam kondisi higienis</div></div></label>
-              <label class="ci"><input type="checkbox" name="karyawan_bersih" value="1"><div><div class="ct">Karyawan menjaga kebersihan diri & pakaian <strong>*</strong></div><div class="cs">Menggunakan celemek, penutup kepala di dapur</div></div></label>
-              <label class="ci"><input type="checkbox" name="sop_kebersihan" value="1"><div><div class="ct">Memiliki SOP kebersihan dapur tertulis <strong>*</strong></div><div class="cs">Prosedur cuci tangan, sanitasi peralatan, jadwal kebersihan</div></div></label>
-            </div>
-          </div>
-
-          <div class="fsec" style="margin-top:16px">
-            <div class="ft">Keputusan Verifikasi (Admin)</div>
-            <div class="g2">
-              <div class="fg">
-                <label>Status Verifikasi</label>
-                <select name="status_verifikasi">
-                  <option value="pending">Pending</option>
-                  <option value="terverifikasi">Terverifikasi</option>
-                  <option value="ditolak">Ditolak</option>
-                </select>
-              </div>
-              <div class="fg">
-                <label>Tipe Halal</label>
-                <select name="tipe_halal">
-                  <option value="none">Belum Terverifikasi</option>
-                  <option value="certified">Certified Halal</option>
-                  <option value="self_claimed">Self-Claimed Halal</option>
-                </select>
-              </div>
-              <div class="fg" style="grid-column:1/-1">
-                <label>Catatan Admin</label>
-                <textarea name="catatan" placeholder="Catatan untuk pemilik..."></textarea>
-              </div>
-            </div>
-          </div>
+          @include('form_nambah_usaha.admin_dokumen', ['isAdmin' => true])
         </div>
 
         {{-- STEP 4 --}}
         <div class="sp" id="p4">
-          <div style="text-align:center;padding:24px 0 12px">
-            <div style="width:60px;height:60px;background:var(--gl);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
-              <svg width="30" height="30" fill="none" stroke="var(--g)" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-            <div style="font-size:18px;font-weight:700;color:var(--s9)">Siap Disimpan!</div>
-            <div style="font-size:13px;color:var(--s6);margin-top:8px;line-height:1.7">Periksa ringkasan data di bawah,<br>lalu klik <strong>Simpan & Kirim</strong>.</div>
-          </div>
-          <div id="summBox" style="background:var(--s1);border-radius:12px;padding:16px 20px;font-size:13px;color:var(--s7);line-height:2;margin-top:8px"></div>
+          @include('form_nambah_usaha.review', ['isAdmin' => true])
         </div>
+
       </form>
     </div>
 
     <div class="modal-foot">
       <button class="btn btn-outline" id="btnPrev" onclick="prevS()" style="display:none">← Kembali</button>
-      <button class="btn btn-primary" id="btnNext" onclick="nextS()">Selanjutnya →</button>
-      <button class="btn btn-primary" id="btnSave" onclick="saveRestoran()" style="display:none">
+      <button class="btn btn-primary"  id="btnNext" onclick="nextS()">Selanjutnya →</button>
+      <button class="btn btn-primary"  id="btnSave" onclick="saveRestoran()" style="display:none">
         <span id="saveL">Simpan & Kirim</span>
         <span id="saveS" class="spinner" style="display:none"></span>
       </button>
@@ -540,17 +315,22 @@ textarea{resize:vertical;min-height:68px}
   <div class="modal" style="max-width:420px">
     <div class="modal-body" style="padding:32px 28px;text-align:center">
       <div class="del-icon">
-        <svg fill="none" stroke="#e53e3e" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        <svg fill="none" stroke="#e53e3e" stroke-width="2" viewBox="0 0 24 24">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14H6L5 6"/>
+          <path d="M10 11v6M14 11v6"/>
+          <path d="M9 6V4h6v2"/>
+        </svg>
       </div>
       <div style="font-size:18px;font-weight:700;color:var(--s9)">Hapus Usaha?</div>
       <div style="font-size:13px;color:var(--s6);margin-top:8px;line-height:1.7">
         Yakin ingin menghapus <strong id="delNama"></strong>?<br>
-        Semua data termasuk menu akan terhapus.
+        Semua data termasuk menu akan terhapus permanen.
       </div>
     </div>
     <div class="modal-foot" style="justify-content:center;gap:12px">
       <button class="btn btn-outline" onclick="closeM('delModal')">Batal</button>
-      <button class="btn btn-danger" onclick="doDelete()">
+      <button class="btn btn-danger"  onclick="doDelete()">
         <span id="delL">Ya, Hapus</span>
         <span id="delS" class="spinner" style="display:none"></span>
       </button>
@@ -562,294 +342,120 @@ textarea{resize:vertical;min-height:68px}
 
 @push('scripts')
 <script>
-let curStep = 1, editId = null, deleteId = null;
-const TOTAL = 4;
+// Injeksi config ke JS sebelum load scripts
+window.FORM_IS_ADMIN = true;
+window.FORM_EDIT_ID  = null; // diset ulang oleh openEdit()
+</script>
+@include('form_nambah_usaha._form_scripts')
+<script>
+// ── FUNGSI KHUSUS ADMIN ──────────────────────────────────────────
+let deleteId = null;
 
-// ── DATA KELURAHAN BATAM PER KECAMATAN ──
-const BATAM_AREA = {
-  'Batam Kota': {
-    kelurahan: ['Belian','Baloi Permai','Sungai Panas','Sukajadi','Teluk Tering','Taman Baloi','Sei Ladi'],
-    kodePos: '29461'
-  },
-  'Batu Aji': {
-    kelurahan: ['Bukit Tempayan','Tembesi','Kibing','Buliang'],
-    kodePos: '29422'
-  },
-  'Batu Ampar': {
-    kelurahan: ['Batu Ampar','Kampung Seraya','Sungai Jodoh','Tanjung Sengkuang'],
-    kodePos: '29451'
-  },
-  'Bengkong': {
-    kelurahan: ['Bengkong Harapan','Bengkong Laut','Bengkong Indah','Sadai'],
-    kodePos: '29458'
-  },
-  'Bulang': {
-    kelurahan: ['Bulang Lintang','Batu Legong','Temoyong','Pantai Gelam','Pulau Buluh','Pulau Jaloh'],
-    kodePos: '29471'
-  },
-  'Galang': {
-    kelurahan: ['Galang Baru','Air Raja','Karas','Sembulang','Sijantung','Subang Mas','Rempang Cate'],
-    kodePos: '29472'
-  },
-  'Lubuk Baja': {
-    kelurahan: ['Batu Selicin','Baloi Indah','Kampung Pelita','Lubuk Baja Kota','Tanjung Uma'],
-    kodePos: '29441'
-  },
-  'Nongsa': {
-    kelurahan: ['Batu Besar','Kabil','Nongsa','Sambau'],
-    kodePos: '29466'
-  },
-  'Sagulung': {
-    kelurahan: ['Sei Langkai','Sei Lekop','Sei Pelunggut','Sei Binti','Sagulung Kota','Tembesi'],
-    kodePos: '29425'
-  },
-  'Sei Beduk': {
-    kelurahan: ['Duriangkang','Mangsang','Muka Kuning','Tanjung Piayu'],
-    kodePos: '29433'
-  },
-  'Sekupang': {
-    kelurahan: ['Sungai Harapan','Tanjung Pinggir','Tanjung Riau','Tiban Baru','Tiban Indah','Tiban Lama','Patam Lestari'],
-    kodePos: '29415'
-  },
-  'Belakang Padang': {
-    kelurahan: ['Belakang Padang','Kasu','Pecong','Pemping','Pulau Terong','Sekanak Raya'],
-    kodePos: '29411'
-  },
-};
-
-// ── LOAD KELURAHAN BERDASARKAN KECAMATAN ──
-function loadKelurahan(selectedKel = null) {
-  const kec = document.getElementById('kecamatanSel').value;
-  const kelSel = document.getElementById('kelurahanSel');
-  const kodePosInput = document.getElementById('kodePosInput');
-
-  kelSel.innerHTML = '<option value="">Pilih Kelurahan</option>';
-
-  if (!kec || !BATAM_AREA[kec]) return;
-
-  const area = BATAM_AREA[kec];
-  area.kelurahan.forEach(kel => {
-    const o = document.createElement('option');
-    o.value = kel;
-    o.textContent = kel;
-    if (selectedKel && kel === selectedKel) o.selected = true;
-    kelSel.appendChild(o);
-  });
-
-  // Auto-isi kode pos
-  if (kodePosInput) kodePosInput.value = area.kodePos;
-}
-
-// ── OPEN TAMBAH ──
-function openTambah(){
-  editId = null;
+function openTambah() {
+  window.FORM_EDIT_ID = null;
+  EDIT_ID = null; 
   document.getElementById('modalTitle').textContent = 'Tambah Data Usaha Halal';
-  document.getElementById('restoranForm').reset();
-  // Reset kode pos dan kelurahan
-  document.getElementById('kelurahanSel').innerHTML = '<option value="">Pilih kecamatan dulu</option>';
-  document.getElementById('kodePosInput').value = '';
-  document.getElementById('kotaInput').value = 'Batam';
-  loadSub(); togSert();
-  gS(1);
+  resetRestoranForm();
   document.getElementById('restoranModal').classList.add('open');
 }
 
-// ── OPEN EDIT ──
-async function openEdit(id){
-  editId = id;
+async function openEdit(id) {
+  window.FORM_EDIT_ID = id;
+  EDIT_ID = id;  
   document.getElementById('modalTitle').textContent = 'Edit Data Usaha';
-  document.getElementById('restoranForm').reset();
-
-  const data = await apiFetch(`/admin/restoran/${id}/data`);
-  const r = data.restoran, v = data.verifikasi;
-  const f = document.getElementById('restoranForm');
-  const set = (n,val) => { const el=f.querySelector(`[name="${n}"]`); if(el&&val!=null) el.value=val; };
-
-  set('nama_restoran',r.nama_restoran);
-  set('id_kategori',r.id_kategori);
-  loadSub(r.id_sub_kategori);
-  set('kapasitas_tempat',r.kapasitas_tempat);
-  set('jam_operasional',r.jam_operasional);
-  // ✅ FIX: id_pemilik sesuai User model (kolom id)
-  set('id_pemilik',r.id_pemilik);
-  set('deskripsi',r.deskripsi);
-  set('harga_rata_rata_min',r.harga_rata_rata_min);
-  set('harga_rata_rata_max',r.harga_rata_rata_max);
-  set('alamat',r.alamat);
-
-  // Set kecamatan lalu load kelurahan
-  const kecSel = document.getElementById('kecamatanSel');
-  if (r.kecamatan_kelurahan) {
-    // Cek apakah kecamatan_kelurahan adalah nama kecamatan
-    if (BATAM_AREA[r.kecamatan_kelurahan]) {
-      kecSel.value = r.kecamatan_kelurahan;
-      loadKelurahan();
-    } else {
-      // Coba cari kecamatan dari kelurahan yang tersimpan
-      kecSel.value = '';
-      loadKelurahan();
-    }
-  }
-
-  set('kota',r.kota||'Batam');
-  set('provinsi',r.provinsi||'Kepulauan Riau');
-  set('kode_pos',r.kode_pos);
-  set('latitude',r.latitude);
-  set('longitude',r.longitude);
-  set('no_telepon',r.no_telepon);
-  set('email_usaha',r.email_usaha);
-  set('website_sosmed',r.website_sosmed);
-
-  if(v){
-    set('no_sertifikat',v.no_sertifikat);
-    set('lembaga_penerbit',v.lembaga_penerbit);
-    set('masa_berlaku',v.masa_berlaku?.substring(0,10));
-    set('status_verifikasi',v.status);
-    set('catatan',v.catatan);
-    ['bebas_babi','daging_halal','bumbu_bebas_alkohol','kemasan_halal',
-     'peralatan_tidak_najis','tidak_jual_alkohol','dapur_bersih','karyawan_bersih','sop_kebersihan']
-    .forEach(k=>{ const cb=f.querySelector(`[name="${k}"]`); if(cb) cb.checked=!!v[k]; });
-    set('has_sertifikat', v.no_sertifikat ? 'ya' : 'tidak');
-    togSert();
-  }
-
-  set('tipe_halal', r.status_halal);
-  gS(1);
+  resetRestoranForm();
+  await populateEdit(id);
   document.getElementById('restoranModal').classList.add('open');
 }
 
-// ── STEPS ──
-function gS(n){
-  for(let i=1;i<=TOTAL;i++){
-    document.getElementById(`p${i}`).classList.toggle('on',i===n);
-    const s=document.getElementById(`s${i}`);
-    s.classList.remove('on','done');
-    if(i===n) s.classList.add('on');
-    else if(i<n) s.classList.add('done');
-  }
-  curStep=n;
-  document.getElementById('btnPrev').style.display = n>1?'':'none';
-  document.getElementById('btnNext').style.display = n<TOTAL?'':'none';
-  document.getElementById('btnSave').style.display = n===TOTAL?'':'none';
-  if(n===TOTAL) buildSumm();
-}
-function nextS(){ if(curStep<TOTAL) gS(curStep+1); }
-function prevS(){ if(curStep>1) gS(curStep-1); }
-
-function buildSumm(){
-  const f=document.getElementById('restoranForm');
-  const g=n=>f.querySelector(`[name="${n}"]`)?.value??'-';
-  const kec = g('kecamatan_kelurahan');
-  const kel = g('kelurahan');
-  document.getElementById('summBox').innerHTML=`
-    <b>Nama Usaha:</b> ${g('nama_restoran')}<br>
-    <b>Jam Operasional:</b> ${g('jam_operasional')}<br>
-    <b>Alamat:</b> ${g('alamat')}<br>
-    <b>Kecamatan:</b> ${kec||'-'} &nbsp;|&nbsp; <b>Kelurahan:</b> ${kel||'-'}<br>
-    <b>Kota:</b> Batam, Kepulauan Riau<br>
-    <b>No. Telepon:</b> ${g('no_telepon')}<br>
-    <b>Sertifikat:</b> ${g('has_sertifikat')||'-'}<br>
-    <b>Status Verifikasi:</b> ${g('status_verifikasi')}
-  `;
-}
-
-// ── SAVE ──
-async function saveRestoran(){
-  document.getElementById('saveL').style.display='none';
-  document.getElementById('saveS').style.display='';
-
-  const fd = new FormData(document.getElementById('restoranForm'));
-  const url = editId ? `/admin/restoran/${editId}/update` : '/admin/restoran';
-
-  const data = await fetch(url,{
-    method:'POST',
-    headers:{'X-CSRF-TOKEN':CSRF,'Accept':'application/json'},
-    body:fd,
-  }).then(r=>r.json());
-
-  document.getElementById('saveL').style.display='';
-  document.getElementById('saveS').style.display='none';
-
-  if(data.success){
-    showToast(data.message,'success');
-    closeM('restoranModal');
-    setTimeout(()=>location.reload(),800);
-  } else {
-    showToast(data.message??'Terjadi kesalahan','error');
-  }
-}
-
-// ── DELETE ──
-function openDel(id,nama){
-  deleteId=id;
-  document.getElementById('delNama').textContent=nama;
+function openDel(id, nama) {
+  deleteId = id;
+  document.getElementById('delNama').textContent = nama;
   document.getElementById('delModal').classList.add('open');
 }
 
-async function doDelete(){
-  document.getElementById('delL').style.display='none';
-  document.getElementById('delS').style.display='';
-
-  const data = await apiFetch(`/admin/restoran/${deleteId}`,{method:'DELETE'});
-
-  document.getElementById('delL').style.display='';
-  document.getElementById('delS').style.display='none';
-
-  if(data.success){
-    showToast('Usaha berhasil dihapus','success');
+async function doDelete() {
+  document.getElementById('delL').style.display = 'none';
+  document.getElementById('delS').style.display = '';
+  const data = await apiFetch(`/admin/restoran/${deleteId}`, { method: 'DELETE' });
+  document.getElementById('delL').style.display = '';
+  document.getElementById('delS').style.display = 'none';
+  if (data.success) {
+    showToast('Usaha berhasil dihapus', 'success');
     closeM('delModal');
     document.querySelector(`tr[data-id="${deleteId}"]`)?.remove();
   } else {
-    showToast('Gagal menghapus','error');
+    showToast('Gagal menghapus', 'error');
   }
 }
 
-// ── HELPERS ──
-function closeM(id){ document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+function closeM(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o =>
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); })
+);
+function applyQ(page = 1) {
+    const params = new URLSearchParams(window.location.search);
 
-function loadSub(selId=null){
-  const opt = document.getElementById('katSel').options[document.getElementById('katSel').selectedIndex];
-  const sub = document.getElementById('subSel');
-  sub.innerHTML='<option value="">Pilih sub kategori</option>';
-  if(!opt?.dataset?.subs) return;
-  JSON.parse(opt.dataset.subs).forEach(s=>{
-    const o=document.createElement('option');
-    o.value=s.id_sub_kategori; o.textContent=s.nama_sub_kategori;
-    if(selId&&s.id_sub_kategori==selId) o.selected=true;
-    sub.appendChild(o);
-  });
+    // search
+    const search = document.getElementById('searchInput')?.value;
+    if (search) {
+        params.set('search', search);
+    } else {
+        params.delete('search');
+    }
+
+    // sort
+    const sort = document.getElementById('sortSel')?.value;
+    if (sort) {
+        params.set('sort', sort);
+    }
+
+    // wilayah
+    const wilayah = document.getElementById('wilayahSel')?.value;
+    if (wilayah && wilayah !== 'Wilayah: Semua') {
+        params.set('wilayah', wilayah);
+    } else {
+        params.delete('wilayah');
+    }
+
+    params.set('page', page);
+
+    window.location.href = `{{ route('admin.restoran.list') }}?${params.toString()}`;
 }
 
-function togSert(){
-  const v=document.getElementById('hasSert').value;
-  document.getElementById('sertSec').style.display = v==='ya'?'':'none';
-  document.getElementById('alasanSec').style.display = v==='tidak'?'':'none';
+function filterKat(id) {
+    const params = new URLSearchParams(window.location.search);
+
+    if (id) {
+        params.set('kategori', id);
+    } else {
+        params.delete('kategori');
+    }
+
+    params.set('page', 1);
+
+    window.location.href = `{{ route('admin.restoran.list') }}?${params.toString()}`;
 }
 
-function filterKat(id){
-  const u=new URL(window.location);
-  id ? u.searchParams.set('kategori',id) : u.searchParams.delete('kategori');
-  u.searchParams.delete('page'); window.location=u;
+function goPage(page) {
+    applyQ(page);
 }
 
-function applyQ(){
-  const u=new URL(window.location);
-  u.searchParams.set('sort',document.getElementById('sortSel').value);
-  window.location=u;
-}
-
-document.getElementById('searchInput').addEventListener('keydown',e=>{
-  if(e.key==='Enter'){
-    const u=new URL(window.location);
-    u.searchParams.set('search',e.target.value);
-    u.searchParams.delete('page'); window.location=u;
-  }
+// search enter
+document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        applyQ();
+    }
 });
 
-function goPage(p){
-  const u=new URL(window.location);
-  u.searchParams.set('page',p); window.location=u;
-}
+// realtime search delay
+let searchTimer;
+document.getElementById('searchInput')?.addEventListener('input', function() {
+    clearTimeout(searchTimer);
+
+    searchTimer = setTimeout(() => {
+        applyQ();
+    }, 500);
+});
 </script>
 @endpush

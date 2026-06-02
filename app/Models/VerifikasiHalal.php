@@ -9,14 +9,27 @@ class VerifikasiHalal extends Model
     protected $primaryKey = 'id_verifikasi';
     public $timestamps = false;
     protected $fillable = [
-        'id_admin', 'id_restoran', 'no_sertifikat', 'lembaga_penerbit',
-        'masa_berlaku', 'dokumen_sertifikat', 'tanggal_verifikasi',
-        'status', 'catatan',
-        'bebas_babi', 'daging_halal', 'bumbu_bebas_alkohol', 'kemasan_halal',
-        'peralatan_tidak_najis', 'tidak_jual_alkohol',
-        'dapur_bersih', 'karyawan_bersih', 'sop_kebersihan'
+        'id_admin',
+        'id_restoran',
+        'no_sertifikat',
+        'lembaga_penerbit',
+        'masa_berlaku',
+        'dokumen_sertifikat',
+        'tanggal_pengajuan', // tambah ini
+        'tanggal_verifikasi',
+        'status',
+        'catatan',
+        'bebas_babi',
+        'daging_halal',
+        'bumbu_bebas_alkohol',
+        'kemasan_halal',
+        'peralatan_tidak_najis',
+        'tidak_jual_alkohol',
+        'dapur_bersih',
+        'karyawan_bersih',
+        'sop_kebersihan'
     ];
- 
+    
     protected $casts = [
         'masa_berlaku'       => 'date',
         'tanggal_verifikasi' => 'date',
