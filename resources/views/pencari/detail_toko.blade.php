@@ -190,5 +190,60 @@
   {{-- Menu — read only --}}
   @include('detail_toko.grid_menu')
 
+  {{-- Form Ulasan & Rating --}}
+  <div class="card" style="margin-top:24px">
+    <div class="vc-t" style="margin-bottom:16px">Beri Ulasan & Rating</div>
+
+    @if(session('success'))
+      <div style="background:var(--gl);color:var(--gd);padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px">
+        {{ session('success') }}
+      </div>
+    @endif
+
+    @auth
+    <form method="POST" action="{{ route('ulasan.store') }}">
+      @csrf
+      <input type="hidden" name="id_restoran" value="{{ $restoran->id_restoran }}">
+
+      <div class="fg" style="margin-bottom:12px">
+        <label>Rating Kamu</label>
+        <div id="starRating" style="display:flex;gap:6px;margin-top:4px">
+          @for($i = 1; $i <= 5; $i++)
+          <span class="star" data-value="{{ $i }}" style="font-size:28px;cursor:pointer;color:#d1d5db;transition:color .15s">★</span>
+          @endfor
+        </div>
+        <input type="hidden" name="rating" id="ratingInput" required>
+      </div>
+
+      <div class="fg">
+        <label>Komentar (opsional)</label>
+        <textarea name="komentar" placeholder="Bagaimana pengalaman makanmu di sini?" maxlength="500"></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="margin-top:14px">
+        Kirim Ulasan
+      </button>
+    </form>
+
+    <script>
+    document.querySelectorAll('#starRating .star').forEach(star => {
+        star.addEventListener('click', function() {
+            const value = this.getAttribute('data-value');
+            document.getElementById('ratingInput').value = value;
+
+            document.querySelectorAll('#starRating .star').forEach(s => {
+                s.style.color = s.getAttribute('data-value') <= value ? '#facc15' : '#d1d5db';
+            });
+        });
+    });
+    </script>
+
+    @else
+    <p style="font-size:13px;color:var(--s6)">
+      <a href="{{ route('login') }}" style="color:var(--g);font-weight:600">Login</a> untuk memberi ulasan dan rating.
+    </p>
+    @endauth
+  </div>
+
 </div>
 @endsection

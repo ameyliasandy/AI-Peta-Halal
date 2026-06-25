@@ -10,37 +10,54 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Pemilik\PemilikController;
 use App\Http\Controllers\Pemilik\DaftarUsahaController;
+use App\Http\Controllers\Pencari\DashboardController as PencariDashboardController;
+use App\Http\Controllers\GuestController;
+use App\Http\Controllers\Pencari\RekomendasiController;
+use App\Http\Controllers\RestoranPublicController;
+use App\Http\Controllers\UlasanController;
 
 //HALAMAN UTAMA (GUEST)
 Route::get('/', function () {
     if (Auth::check()) {
+        $role = Auth::user()->role;
+        if ($role === 'admin') return redirect('/admin/index');
+        if ($role === 'pemilik_usaha') return redirect('/pemilik/dashboard');
         return redirect('/dashboard');
     }
-    return view('guest');
+    return app(GuestController::class)->index();
 });
 
 //AUTH
 Route::get('/register', [AuthController::class, 'showRegister']);
 Route::post('/register', [AuthController::class, 'register']);
 
-Route::get('/login', [AuthController::class, 'showLogin']);
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 //ONBOARDING
-// Guest (tanpa login)
 Route::get('/onboarding', [OnboardingController::class, 'index']);
 Route::post('/onboarding', [OnboardingController::class, 'store']);
 
 //DASHBOARD
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware('auth');
+Route::get('/dashboard', [PencariDashboardController::class, 'index'])
+    ->middleware('auth')
+    ->name('dashboard');
+
+// ─── RESTORAN PUBLIK (PENCARI) ─────────────────────────────────────────────
+Route::get('/restoran/{id}', [RestoranPublicController::class, 'show'])
+    ->name('restoran.show');
+
+// ─── REKOMENDASI ────────────────────────────────────────────────────────────
+Route::get('/rekomendasi', [RekomendasiController::class, 'index'])
+    ->middleware('auth')
+    ->name('rekomendasi.index');
 
 // ADMIN
 Route::get('/admin/index', [DashboardController::class, 'index'])
-->middleware('auth')->name('admin.index');;
+    ->middleware('auth')->name('admin.index');
+    
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/restoran',                                     [RestoranController::class, 'list'])->name('restoran.list');
     Route::get('/restoran/export-csv',                          [RestoranController::class, 'exportCsv'])->name('restoran.export');
@@ -53,7 +70,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::put('/restoran/{restoranId}/menu/{menuId}', [RestoranController::class, 'updateMenu']);
     Route::delete('/restoran/{restoranId}/menu/{menuId}', [RestoranController::class, 'destroyMenu']);
 });
- 
+
 // ─── PEMILIK ────────────────────────────────────────────────────────────────
 Route::prefix('pemilik')
     ->middleware('auth')
@@ -115,4 +132,7 @@ Route::middleware('auth')->group(function () {
     // Pengaturan
     Route::get('/pengaturan', [ProfileController::class, 'pengaturan'])->name('profile.pengaturan');
     Route::post('/pengaturan', [ProfileController::class, 'updatePengaturan'])->name('profile.pengaturan.update');
+
+    // Ulasan
+    Route::post('/ulasan', [UlasanController::class, 'store'])->name('ulasan.store');
 });
