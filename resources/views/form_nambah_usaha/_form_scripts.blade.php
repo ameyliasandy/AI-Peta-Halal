@@ -6,13 +6,22 @@
   Variabel JS yang diinjeksi dari blade:
     window.FORM_IS_ADMIN  → bool
     window.FORM_EDIT_ID   → int|null (null = tambah baru)
+
+  ✅ Auto-save ke sessionStorage:
+    - Menyimpan semua field (kecuali file) setiap ada perubahan
+    - Restore otomatis saat form dibuka kembali
+    - Dibersihkan otomatis setelah submit berhasil
+    - Key: 'petha_form_draft' (pemilik) atau 'petha_form_draft_admin' (admin)
 --}}
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────
 const IS_ADMIN  = window.FORM_IS_ADMIN  ?? false;
 let   EDIT_ID   = window.FORM_EDIT_ID   ?? null;
-const TOTAL     = IS_ADMIN ? 4 : 4; // sama, tapi step 3 isi-nya beda
+const TOTAL     = 4;
 let   curStep   = 1;
+
+// Key untuk sessionStorage — pisahkan admin vs pemilik
+const DRAFT_KEY = IS_ADMIN ? 'petha_form_draft_admin' : 'petha_form_draft';
 
 // ── DATA WILAYAH BATAM ───────────────────────────────────────────
 const BATAM_AREA = {
@@ -29,6 +38,174 @@ const BATAM_AREA = {
   'Sekupang'       : { kel: ['Sungai Harapan','Tanjung Pinggir','Tanjung Riau','Tiban Baru','Tiban Indah','Tiban Lama','Patam Lestari'], kpos: '29415' },
   'Belakang Padang': { kel: ['Belakang Padang','Kasu','Pecong','Pemping','Pulau Terong','Sekanak Raya'], kpos: '29411' },
 };
+
+// ── AUTO-SAVE: Kumpulkan semua nilai form → simpan ke sessionStorage ──────
+function draftSave() {
+  // Jika ini mode edit (ada EDIT_ID), skip draft karena data sudah di DB
+  if (EDIT_ID) return;
+
+  const f = document.getElementById('restoranForm');
+  if (!f) return;
+
+  const draft = {};
+
+  // Semua input, select, textarea — kecuali file
+  f.querySelectorAll('input, select, textarea').forEach(el => {
+    if (!el.name || el.type === 'file' || el.type === 'hidden') return;
+
+    if (el.type === 'checkbox') {
+      draft[el.name] = el.checked;
+    } else {
+      draft[el.name] = el.value;
+    }
+  });
+
+  // Simpan step terakhir supaya bisa lanjut dari sini
+  draft['__step'] = curStep;
+
+  try {
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  } catch(e) {
+    // sessionStorage penuh atau private mode — tidak apa-apa
+  }
+}
+
+// ── AUTO-SAVE: Restore dari sessionStorage ke form ───────────────────────
+function draftRestore() {
+  // Hanya restore untuk form tambah baru (bukan edit)
+  if (EDIT_ID) return;
+
+  let draft;
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    draft = JSON.parse(raw);
+  } catch(e) {
+    return;
+  }
+
+  const f = document.getElementById('restoranForm');
+  if (!f) return;
+
+  // Restore kecamatan dulu (karena kelurahan tergantung kecamatan)
+  const kecVal = draft['kecamatan_kelurahan'] ?? draft['__kecamatan'] ?? '';
+  const kelVal = draft['__kelurahan'] ?? '';
+
+  const kecSel = document.getElementById('f-kec');
+  if (kecSel && kecVal) {
+    kecSel.value = kecVal;
+    loadKelurahan(kelVal || null);
+  }
+
+  // Restore field lainnya
+  Object.entries(draft).forEach(([name, value]) => {
+    if (name.startsWith('__')) return; // skip meta fields
+
+    const el = f.querySelector(`[name="${name}"]`);
+    if (!el || el.type === 'file') return;
+
+    if (el.type === 'checkbox') {
+      el.checked = !!value;
+    } else if (el.tagName === 'SELECT') {
+      el.value = value;
+      // Trigger sub-kategori jika kategori di-restore
+      if (el.id === 'f-kat') loadSub();
+    } else {
+      el.value = value ?? '';
+    }
+  });
+
+  // Toggle tampilan sertifikat
+  togSert();
+
+  // Kembali ke step terakhir
+  const lastStep = parseInt(draft['__step'] ?? 1);
+  if (lastStep > 1) {
+    // Tampilkan notifikasi draft
+    showDraftBanner(lastStep);
+  }
+}
+
+// ── DRAFT BANNER: Notifikasi bahwa ada draft tersimpan ─────────────────
+function showDraftBanner(lastStep) {
+  // Cegah duplikat
+  if (document.getElementById('draftBanner')) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'draftBanner';
+  banner.style.cssText = `
+    position:fixed;top:70px;left:50%;transform:translateX(-50%);
+    background:#1D9E75;color:#fff;
+    padding:10px 18px;border-radius:12px;
+    font-size:13px;font-weight:600;z-index:9998;
+    box-shadow:0 8px 20px rgba(0,0,0,.15);
+    display:flex;align-items:center;gap:10px;
+    max-width:90vw;
+  `;
+  banner.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M12 2v10m0 0l-3-3m3 3l3-3"/>
+      <path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/>
+    </svg>
+    Draft tersimpan — lanjut dari step ${lastStep}
+    <button onclick="dismissDraftAndContinue(${lastStep})"
+            style="background:rgba(255,255,255,.25);border:none;color:#fff;
+                   padding:3px 10px;border-radius:7px;font-size:12px;
+                   font-weight:700;cursor:pointer;font-family:inherit">
+      Lanjut
+    </button>
+    <button onclick="clearDraft()"
+            style="background:none;border:none;color:rgba(255,255,255,.7);
+                   font-size:12px;cursor:pointer;padding:3px 6px;font-family:inherit">
+      Hapus
+    </button>
+  `;
+  document.body.appendChild(banner);
+
+  // Auto-hide setelah 8 detik
+  setTimeout(() => banner.remove(), 8000);
+}
+
+function dismissDraftAndContinue(step) {
+  document.getElementById('draftBanner')?.remove();
+  gS(step);
+}
+
+function clearDraft() {
+  try { sessionStorage.removeItem(DRAFT_KEY); } catch(e) {}
+  document.getElementById('draftBanner')?.remove();
+  resetRestoranForm();
+  showToast('Draft dihapus', 'success');
+}
+
+// ── AUTO-SAVE: Pasang event listener di semua field form ────────────────
+function initAutoSave() {
+  if (EDIT_ID) return; // tidak perlu auto-save untuk mode edit
+
+  const f = document.getElementById('restoranForm');
+  if (!f) return;
+
+  // Debounce supaya tidak terlalu sering nulis ke sessionStorage
+  let saveTimer;
+  const debouncedSave = () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      // Simpan nilai kecamatan & kelurahan secara terpisah (karena select kelurahan dinamis)
+      const draft = JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? '{}');
+      const kecEl = document.getElementById('f-kec');
+      const kelEl = document.getElementById('f-kel');
+      if (kecEl) draft['__kecamatan'] = kecEl.value;
+      if (kelEl) draft['__kelurahan'] = kelEl.value;
+      try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch(e) {}
+
+      draftSave();
+    }, 400);
+  };
+
+  // Event listener untuk setiap perubahan field
+  f.addEventListener('input',  debouncedSave);
+  f.addEventListener('change', debouncedSave);
+}
 
 // ── KELURAHAN ────────────────────────────────────────────────────
 function loadKelurahan(selectedKel = null) {
@@ -87,14 +264,18 @@ function gS(n) {
     const s = document.getElementById(`s${i}`);
     if (!s) continue;
     s.classList.remove('on', 'done');
-    if (i === n)   s.classList.add('on');
+    if (i === n)    s.classList.add('on');
     else if (i < n) s.classList.add('done');
   }
   curStep = n;
+
+  // Simpan progress step ke draft
+  draftSave();
+
   const btnPrev = document.getElementById('btnPrev');
   const btnNext = document.getElementById('btnNext');
   const btnSave = document.getElementById('btnSave');
-  if (btnPrev) btnPrev.style.display = n > 1    ? '' : 'none';
+  if (btnPrev) btnPrev.style.display = n > 1     ? '' : 'none';
   if (btnNext) btnNext.style.display = n < TOTAL ? '' : 'none';
   if (btnSave) btnSave.style.display = n === TOTAL ? '' : 'none';
   if (n === TOTAL) buildSumm();
@@ -121,7 +302,6 @@ function buildSumm() {
     <b>Sertifikat:</b> ${g('has_sertifikat') === 'ya' ? '✅ Bersertifikat' : '🕐 Self-Claimed'}
   `;
 
-  // Baris tambahan hanya untuk admin
   if (IS_ADMIN) {
     rows += `<br><b>Status Verifikasi:</b> ${g('status_verifikasi')}`;
     rows += `<br><b>Tipe Halal:</b> ${g('tipe_halal')}`;
@@ -156,8 +336,10 @@ async function saveRestoran() {
     const data = await res.json();
 
     if (data.success) {
+      //Hapus draft setelah submit berhasil
+      try { sessionStorage.removeItem(DRAFT_KEY); } catch(e) {}
+
       showToast(data.message, 'success');
-      // Admin: tutup modal lalu reload. Pemilik: redirect ke dashboard.
       if (IS_ADMIN) {
         closeM('restoranModal');
         setTimeout(() => location.reload(), 800);
@@ -192,9 +374,12 @@ function setHidden(name, value) {
 // ── RESET FORM (untuk buka modal tambah) ─────────────────────────
 function resetRestoranForm() {
   document.getElementById('restoranForm')?.reset();
-  document.getElementById('f-kel').innerHTML = '<option value="">Pilih kecamatan dulu</option>';
-  document.getElementById('f-kpos').value    = '';
-  document.getElementById('f-sub').innerHTML = '<option value="">Pilih jenis usaha dulu</option>';
+  const kelEl  = document.getElementById('f-kel');
+  const kposEl = document.getElementById('f-kpos');
+  const subEl  = document.getElementById('f-sub');
+  if (kelEl)  kelEl.innerHTML  = '<option value="">Pilih kecamatan dulu</option>';
+  if (kposEl) kposEl.value     = '';
+  if (subEl)  subEl.innerHTML  = '<option value="">Pilih jenis usaha dulu</option>';
   togSert();
   gS(1);
 }
@@ -221,7 +406,6 @@ async function populateEdit(id) {
   set('harga_rata_rata_max', r.harga_rata_rata_max);
   set('alamat',           r.alamat);
 
-  // Kecamatan & kelurahan
   const kecSel = document.getElementById('f-kec');
   if (kecSel && r.kecamatan_kelurahan) {
     const parts = r.kecamatan_kelurahan.split(', ');
@@ -239,11 +423,11 @@ async function populateEdit(id) {
   set('website_sosmed', r.website_sosmed);
 
   if (v) {
-    set('no_sertifikat',   v.no_sertifikat);
-    set('lembaga_penerbit',v.lembaga_penerbit);
-    set('masa_berlaku',    v.masa_berlaku?.substring(0, 10));
+    set('no_sertifikat',    v.no_sertifikat);
+    set('lembaga_penerbit', v.lembaga_penerbit);
+    set('masa_berlaku',     v.masa_berlaku?.substring(0, 10));
     set('status_verifikasi', v.status);
-    set('catatan',         v.catatan);
+    set('catatan',          v.catatan);
     ['bebas_babi','daging_halal','bumbu_bebas_alkohol','kemasan_halal',
      'peralatan_tidak_najis','tidak_jual_alkohol',
      'dapur_bersih','karyawan_bersih','sop_kebersihan'].forEach(k => {
@@ -258,4 +442,15 @@ async function populateEdit(id) {
     set('tipe_halal', r.status_halal);
   }
 }
+
+// ── INIT — jalankan saat DOM siap ────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  // Pasang auto-save listener
+  initAutoSave();
+
+  // Restore draft (hanya untuk form tambah baru, bukan edit)
+  if (!EDIT_ID) {
+    draftRestore();
+  }
+});
 </script>

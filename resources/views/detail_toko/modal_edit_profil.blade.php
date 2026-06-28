@@ -1,13 +1,6 @@
 {{--
   detail_toko/modal_edit_profil.blade.php
   Modal edit profil toko.
-  Admin   → bisa ubah status_buka + semua field.
-  Pemilik → semua field KECUALI status_buka (toggle terpisah).
-
-  Variabel:
-    $restoran
-    $isAdmin   → bool
-    $urlUpdate → string URL POST update
 --}}
 <div class="modal-overlay" id="editTokoM">
   <div class="modal" style="max-width:520px">
@@ -22,7 +15,22 @@
     <div class="modal-body">
       <form id="editTokoF" enctype="multipart/form-data">
         @csrf
+        @method('PUT') 
+        
         <div style="display:flex;flex-direction:column;gap:14px">
+
+          {{-- UPLOAD FOTO UTAMA --}}
+          <div class="fg">
+            <label>Foto Utama</label>
+            <div style="display:flex;align-items:center;gap:12px">
+              @if($restoran->foto_utama)
+                <img src="{{ $restoran->getFotoUtamaUrl() }}" 
+                     style="width:80px;height:80px;object-fit:cover;border-radius:8px">
+              @endif
+              <input type="file" name="foto_utama" accept="image/*">
+              <small style="color:var(--g)">Max 2MB</small>
+            </div>
+          </div>
 
           {{-- Nama --}}
           <div class="fg">
@@ -72,8 +80,12 @@
             <input type="text" name="alamat" value="{{ $restoran->alamat }}">
           </div>
 
-          {{-- Kota + Provinsi --}}
-          <div class="g2">
+          {{-- Kecamatan + Kota + Provinsi --}}
+          <div class="g3">
+            <div class="fg">
+              <label>Kecamatan</label>
+              <input type="text" name="kecamatan_kelurahan" value="{{ $restoran->kecamatan_kelurahan }}">
+            </div>
             <div class="fg">
               <label>Kota</label>
               <input type="text" name="kota" value="{{ $restoran->kota }}">
@@ -87,7 +99,7 @@
           {{-- Deskripsi --}}
           <div class="fg">
             <label>Deskripsi</label>
-            <textarea name="deskripsi">{{ $restoran->deskripsi }}</textarea>
+            <textarea name="deskripsi" rows="3">{{ $restoran->deskripsi }}</textarea>
           </div>
 
         </div>
@@ -105,20 +117,25 @@
 </div>
 
 <script>
-const URL_UPDATE_TOKO = '{{ $urlUpdate }}';
+const URL_UPDATE_TOKO = "{{ route('pemilik.toko.update', $restoran->id_restoran) }}";
 
-async function saveEditToko() {
-  document.getElementById('etL').style.display = 'none';
-  document.getElementById('etS').style.display = '';
+  async function saveEditToko(){
 
-  const fd = new FormData(document.getElementById('editTokoF'));
+      const fd = new FormData(
+          document.getElementById('editTokoF')
+      );
 
-  try {
-    const res = await fetch(URL_UPDATE_TOKO, {
-      method: 'POST',
-      headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
-      body: fd,
-    });
+      try {
+
+          const res = await fetch(URL_UPDATE_TOKO,{
+              method:'POST',
+              headers:{
+                  'X-CSRF-TOKEN':CSRF,
+                  'Accept':'application/json'
+              },
+              body:fd
+          });
+
     const d = await res.json();
     if (d.success) {
       showToast('Profil toko diperbarui', 'success');

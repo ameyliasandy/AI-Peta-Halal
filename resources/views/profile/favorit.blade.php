@@ -28,7 +28,7 @@
                         <div class="flex gap-4 border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition">
                             <div class="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100">
                                 @if($item->restoran->foto_utama)
-                                    <img src="{{ $item->restoran->foto_utama }}" class="w-full h-full object-cover">
+                                    <img src="{{ $item->restoran->getFotoUtamaUrl() }}" class="w-full h-full object-cover">
                                 @else
                                     <div class="w-full h-full bg-[#d8f3dc] flex items-center justify-center text-2xl">🍽️</div>
                                 @endif

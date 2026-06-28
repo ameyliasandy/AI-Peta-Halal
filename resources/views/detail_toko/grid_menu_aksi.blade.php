@@ -195,8 +195,8 @@
             <div class="fg">
               <label>Status</label>
               <select name="tersedia">
-                <option value="1">✅ Tersedia</option>
-                <option value="0">❌ Habis</option>
+                <option value="1">Tersedia</option>
+                <option value="0">Habis</option>
               </select>
             </div>
           </div>
@@ -237,7 +237,7 @@
 
 <script>
 const URL_STORE_MENU  = '{{ $urlStoreMenu }}';
-const URL_UPDATE_MENU = '{{ $urlUpdateMenu }}';
+const URL_UPDATE_MENU = "{{ url('pemilik/toko/menu') }}";
 const URL_DELETE_MENU = '{{ $urlDeleteMenu }}';
 
 let editMenuId = null;
@@ -268,7 +268,9 @@ async function saveMenu() {
     document.getElementById('mS').style.display = '';
 
     const fd  = new FormData(document.getElementById('menuF'));
-    const url = editMenuId ? `${URL_UPDATE_MENU}/${editMenuId}` : URL_STORE_MENU;
+    const url = editMenuId 
+    ? `${URL_UPDATE_MENU}/${editMenuId}` 
+    : URL_STORE_MENU;
     if (editMenuId) fd.append('_method', 'PUT');
 
     const res = await fetch(url, {

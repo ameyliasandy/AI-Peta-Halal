@@ -140,7 +140,7 @@ textarea{resize:vertical;min-height:66px}
         @if($v?->status === 'terverifikasi')
           <span class="badge bv">✓ Terverifikasi</span>
         @elseif($v?->status === 'pending')
-          <span class="badge bp">⏳ Menunggu Review</span>
+          <span class="badge bp"> Menunggu Review</span>
         @elseif($v?->status === 'ditolak')
           <span class="badge br">✕ Ditolak</span>
         @else

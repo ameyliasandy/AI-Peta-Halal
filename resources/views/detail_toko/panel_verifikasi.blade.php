@@ -11,11 +11,11 @@
   <div class="vr">
     <span class="vl">Status</span>
     @if($v?->status === 'terverifikasi')
-      <span class="badge bv">✓ Terverifikasi</span>
+      <span class="badge bv">Terverifikasi</span>
     @elseif($v?->status === 'pending')
-      <span class="badge bp">⏳ Pending</span>
+      <span class="badge bp">Pending</span>
     @elseif($v?->status === 'ditolak')
-      <span class="badge br">✕ Ditolak</span>
+      <span class="badge br">Ditolak</span>
     @else
       <span class="badge bn">Belum Diajukan</span>
     @endif
@@ -35,7 +35,7 @@
     <span class="vl">Masa Berlaku</span>
     <span class="vv" style="{{ $v?->isSertifikatHampirExpire() ? 'color:var(--r);font-weight:700' : '' }}">
       {{ $v?->masa_berlaku?->format('d/m/Y') ?? '—' }}
-      @if($v?->isSertifikatHampirExpire()) ⚠️ @endif
+      @if($v?->isSertifikatHampirExpire())@endif
     </span>
   </div>
 
@@ -56,9 +56,9 @@
     <div class="va-wrap">
       <select id="vStatus">
         <option value="">Pilih status baru...</option>
-        <option value="terverifikasi">✓ Terverifikasi</option>
-        <option value="pending">⏳ Pending</option>
-        <option value="ditolak">✕ Ditolak</option>
+        <option value="terverifikasi">Terverifikasi</option>
+        <option value="pending">Pending</option>
+        <option value="ditolak">Ditolak</option>
       </select>
       <textarea id="vCatatan" placeholder="Catatan admin (opsional)..." style="min-height:60px;resize:none"></textarea>
       <button class="btn btn-primary" style="width:100%;justify-content:center"

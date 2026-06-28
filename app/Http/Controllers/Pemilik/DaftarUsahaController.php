@@ -8,6 +8,7 @@ use App\Models\Restoran;
 use App\Models\Kategori;
 use App\Models\KategoriMenu;
 use App\Models\VerifikasiHalal;
+use Illuminate\Support\Facades\Storage;
 
 class DaftarUsahaController extends Controller
 {
@@ -170,20 +171,37 @@ class DaftarUsahaController extends Controller
         ]);
 
         if ($request->hasFile('foto_utama')) {
-            $restoran->foto_utama = $request->file('foto_utama')
-                ->store('restoran', 'public');
+
+    if($restoran->foto_utama){
+            Storage::disk('public')
+                ->delete($restoran->foto_utama);
         }
 
+        $restoran->foto_utama =
+            $request->file('foto_utama')
+            ->store('restoran','public');
+    }
+
         $restoran->update([
-            'nama_restoran'   => $request->nama_restoran,
-            'deskripsi'       => $request->deskripsi,
-            'alamat'          => $request->alamat,
-            'kota'            => $request->kota,
-            'provinsi'        => $request->provinsi,
-            'latitude'        => $request->latitude,
-            'longitude'       => $request->longitude,
-            'id_kategori'     => $request->id_kategori,
+            'nama_restoran' => $request->nama_restoran,
+            'deskripsi' => $request->deskripsi,
+            'alamat' => $request->alamat,
+            'kota' => $request->kota,
+            'provinsi' => $request->provinsi,
+
+            'kecamatan_kelurahan' => $request->kecamatan_kelurahan,
+            'kode_pos' => $request->kode_pos,
+
+            'id_kategori' => $request->id_kategori,
+
             'jam_operasional' => $request->jam_operasional,
+
+            'no_telepon' => $request->no_telepon,
+            'email_usaha' => $request->email_usaha,
+            'website_sosmed' => $request->website_sosmed,
+
+            'harga_rata_rata_min' => $request->harga_rata_rata_min,
+            'harga_rata_rata_max' => $request->harga_rata_rata_max,
         ]);
 
         return response()->json(['success' => true, 'message' => 'Usaha berhasil diperbarui']);

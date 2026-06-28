@@ -35,7 +35,7 @@
 
 @if(!($isAdmin ?? false))
 <div class="alert-w" style="margin-top:16px;background:#f0fdf4;border-color:var(--g);color:#166534">
-  ℹ️ Setelah dikirim, tim Peta Halal akan memverifikasi usaha Anda dalam 1–3 hari kerja.
+  Setelah dikirim, tim Peta Halal akan memverifikasi usaha Anda dalam 1–3 hari kerja.
   Anda akan mendapat notifikasi melalui email atau nomor HP yang terdaftar.
 </div>
 @endif

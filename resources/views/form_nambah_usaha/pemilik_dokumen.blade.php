@@ -13,8 +13,8 @@
     <label for="f-hassert">Apakah usaha sudah memiliki sertifikat halal?</label>
     <select id="f-hassert" name="has_sertifikat" onchange="togSert()">
       <option value="">— Pilih —</option>
-      <option value="ya">✅ Ya, sudah bersertifikat</option>
-      <option value="tidak">🕐 Belum, tapi ingin mengklaim halal</option>
+      <option value="ya">Ya, sudah bersertifikat</option>
+      <option value="tidak">Belum, tapi ingin mengklaim halal</option>
     </select>
     <span class="hint">
       Usaha tanpa sertifikat resmi akan ditampilkan sebagai "Self-Claimed Halal"
@@ -63,8 +63,15 @@
     Item bertanda <strong>*</strong> wajib dicentang agar usaha dapat ditampilkan di peta.
   </div>
 
-  <p style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--s7)">A. Bahan baku & produk</p>
-  <div class="chk-wrap" style="margin-bottom:14px">
+  {{-- Group A --}}
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <p style="font-size:13px;font-weight:700;margin:0;color:var(--s7)">A. Bahan baku & produk</p>
+    <button type="button" onclick="cekSemua('groupA')"
+            style="font-size:11px;color:#1D9E75;background:none;border:none;cursor:pointer;font-weight:600">
+      Centang Semua (A)
+    </button>
+  </div>
+  <div class="chk-wrap" data-group="groupA" style="margin-bottom:14px">
     <label class="ci">
       <input type="checkbox" name="bebas_babi" value="1">
       <div>
@@ -95,8 +102,15 @@
     </label>
   </div>
 
-  <p style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--s7)">B. Peralatan & fasilitas</p>
-  <div class="chk-wrap" style="margin-bottom:14px">
+  {{-- Group B --}}
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <p style="font-size:13px;font-weight:700;margin:0;color:var(--s7)">B. Peralatan & fasilitas</p>
+    <button type="button" onclick="cekSemua('groupB')"
+            style="font-size:11px;color:#1D9E75;background:none;border:none;cursor:pointer;font-weight:600">
+      Centang Semua (B)
+    </button>
+  </div>
+  <div class="chk-wrap" data-group="groupB" style="margin-bottom:14px">
     <label class="ci">
       <input type="checkbox" name="peralatan_tidak_najis" value="1">
       <div>
@@ -113,8 +127,15 @@
     </label>
   </div>
 
-  <p style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--s7)">C. Kebersihan & higienitas</p>
-  <div class="chk-wrap">
+  {{-- Group C --}}
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <p style="font-size:13px;font-weight:700;margin:0;color:var(--s7)">C. Kebersihan & higienitas</p>
+    <button type="button" onclick="cekSemua('groupC')"
+            style="font-size:11px;color:#1D9E75;background:none;border:none;cursor:pointer;font-weight:600">
+      Centang Semua (C)
+    </button>
+  </div>
+  <div class="chk-wrap" data-group="groupC" style="margin-bottom:14px">
     <label class="ci">
       <input type="checkbox" name="dapur_bersih" value="1">
       <div>
@@ -137,4 +158,34 @@
       </div>
     </label>
   </div>
+
+  {{-- Tombol Centang Semua Persyaratan --}}
+  <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--s2)">
+    <button type="button" onclick="cekSemuaAll()"
+            style="width:100%;padding:10px;background:#1D9E75;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">
+      Centang Semua Persyaratan
+    </button>
+  </div>
 </div>
+
+<script>
+function cekSemua(group) {
+  const wrap = document.querySelector('[data-group="' + group + '"]');
+  if (!wrap) return;
+  const boxes = wrap.querySelectorAll('input[type="checkbox"]');
+  const allChecked = [...boxes].every(b => b.checked);
+  boxes.forEach(b => b.checked = !allChecked);
+}
+
+function cekSemuaAll() {
+  const boxes = document.querySelectorAll('#alasanSec input[type="checkbox"]');
+  const allChecked = [...boxes].every(b => b.checked);
+  boxes.forEach(b => b.checked = !allChecked);
+}
+
+function togSert() {
+  const val = document.getElementById('f-hassert').value;
+  document.getElementById('sertSec').style.display = val === 'ya' ? 'block' : 'none';
+  document.getElementById('alasanSec').style.display = val === 'tidak' ? 'block' : 'none';
+}
+</script>

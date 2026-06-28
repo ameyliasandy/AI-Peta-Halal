@@ -158,7 +158,7 @@
       @endif
 
       {{-- Info singkat --}}
-      <div class="vc">
+      <div class="vc"> 
         <div class="vc-t">Informasi</div>
         <div class="vr">
           <span class="vl">Jam Buka</span>

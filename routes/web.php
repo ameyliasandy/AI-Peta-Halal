@@ -77,9 +77,7 @@ Route::prefix('pemilik')
     ->name('pemilik.')
     ->group(function () {
 
-    Route::get('/dashboard', function () {
-        return view('pemilik.dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [PemilikController::class, 'dashboard'])->name('dashboard');
 
     // ── Toko (DaftarUsahaController) ──────────────────────────
     Route::get('/toko',             [DaftarUsahaController::class, 'index'])->name('toko.index');
@@ -90,10 +88,6 @@ Route::prefix('pemilik')
     Route::put('/toko/{id}',        [DaftarUsahaController::class, 'update'])->name('toko.update');
     Route::delete('/toko/{id}',     [DaftarUsahaController::class, 'destroy'])->name('toko.destroy');
 
-    // ── Profil toko (TokoController) ─────────────────────────
-    Route::get('/toko/profil', [TokoController::class, 'getProfil'])->name('toko.profil');
-    Route::post('/toko/profil', [TokoController::class, 'updateProfil'])->name('toko.profil.update');
-
     // ── Status buka/tutup ────────────────────────────────────
     Route::post('/toko/toggle-buka', [TokoController::class, 'toggleBuka'])
         ->name('toko.toggle-buka');
@@ -102,8 +96,8 @@ Route::prefix('pemilik')
     Route::post('/toko/menu', [TokoController::class, 'storeMenu'])
         ->name('toko.menu.store');
 
-    Route::post('/toko/menu/{id}', [TokoController::class, 'updateMenu'])
-        ->name('toko.menu.update');
+    Route::put('/toko/menu/{id}', [TokoController::class, 'updateMenu'])
+    ->name('toko.menu.update');
 
     Route::delete('/toko/menu/{id}', [TokoController::class, 'destroyMenu'])
         ->name('toko.menu.destroy');

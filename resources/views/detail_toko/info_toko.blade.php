@@ -5,18 +5,34 @@
 
   Variabel: $restoran
 --}}
+
+@php
+  $statusVerif = $restoran->verifikasiHalal?->status;
+  $tipeHalal   = $restoran->status_halal; // certified / self_claimed / none
+  $isVerified  = in_array($statusVerif, ['terverifikasi', 'approved']);
+@endphp
+
 <div class="tname">
   {{ $restoran->nama_restoran }}
-  @if($restoran->status_halal === 'certified')
-    <span class="hb">✓ HALAL MUI</span>
-  @elseif($restoran->status_halal === 'self_claimed')
+  
+  @if($isVerified && $tipeHalal === 'certified')
+    <span class="hb">HALAL MUI</span>
+  @elseif($isVerified && $tipeHalal === 'self_claimed')
+    <span class="sb">Self-Claimed ✓</span>
+  @elseif($tipeHalal === 'self_claimed')
     <span class="sb">Self-Claimed</span>
+  @elseif($statusVerif === 'pending')
+    <span class="sb" style="background:#fef3c7;color:#92400e">Menunggu Verifikasi</span>
+  @elseif($statusVerif === 'ditolak')
+    <span class="sb" style="background:#fee2e2;color:#991b1b">Ditolak</span>
+  @else
+    <span class="sb">Belum Diverifikasi</span>
   @endif
 </div>
 
 <div class="rrow">
   <span style="color:#f59e0b">⭐</span>
-  <span>{{ number_format($restoran->rating, 1) }} ({{ $restoran->jumlah_ulasan }} ulasan)</span>
+  <span>{{ number_format($restoran->rating ?? 0, 1) }} ({{ $restoran->jumlah_ulasan ?? 0 }} ulasan)</span>
   <span style="display:flex;align-items:center;gap:5px">
     <span class="dot" style="background:{{ $restoran->status_buka ? '#22c55e' : 'var(--r)' }}"></span>
     <span style="color:{{ $restoran->status_buka ? '#22c55e' : 'var(--r)' }}">

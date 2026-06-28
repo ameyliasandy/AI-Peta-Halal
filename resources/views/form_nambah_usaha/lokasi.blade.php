@@ -87,7 +87,7 @@
     @if(!($isAdmin ?? false))
     <div class="fg" style="grid-column:1/-1">
       <div class="alert-w" style="background:#eff6ff;border-color:#3b82f6;color:#1e40af">
-        💡 Koordinat GPS membantu pelanggan menemukan lokasi usaha Anda di peta.
+        Koordinat GPS membantu pelanggan menemukan lokasi usaha Anda di peta.
         Buka Google Maps, klik lokasi toko, lalu salin angka yang muncul.
       </div>
     </div>

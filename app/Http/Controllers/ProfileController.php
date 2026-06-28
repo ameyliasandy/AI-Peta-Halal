@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Favorit;
 use App\Models\PreferensiUser;
+use App\Models\Restoran;
 
 class ProfileController extends Controller
 {
@@ -17,20 +18,23 @@ class ProfileController extends Controller
 
     public function index()
     {
-        return view('profile.index', ['user' => Auth::user()]);
+        $user = Auth::user();
+        $restoran = Restoran::where('id_pemilik', $user->id)->first();
+        
+        return view('profile.index', compact('user', 'restoran'));
     }
 
     public function updateProfil(Request $request)
     {
+        $user = Auth::user();
+        
         $request->validate([
             'name'        => 'required|string|max:100',
             'email'       => 'required|email|unique:users,email,' . Auth::id(),
-            'no_telepon'  => 'nullable|string|max:20',
             'foto_profil' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        $user = Auth::user();
-        $data = $request->only('name', 'email', 'no_telepon');
+        $data = $request->only('name', 'email');
 
         if ($request->hasFile('foto_profil')) {
             if ($user->foto_profil) {
@@ -41,6 +45,14 @@ class ProfileController extends Controller
         }
 
         $user->update($data);
+
+        // Update no_telepon di tabel restoran jika ada
+        if ($request->filled('no_telepon')) {
+            $restoran = Restoran::where('id_pemilik', $user->id)->first();
+            if ($restoran) {
+                $restoran->update(['no_telepon' => $request->no_telepon]);
+            }
+        }
 
         return back()->with('success', 'Profil berhasil diperbarui.');
     }
