@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Pencari;
 use App\Http\Controllers\Controller;
 use App\Models\Restoran;
 use App\Models\Menu;
+use App\Models\Pencarian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use GuzzleHttp\Client;
@@ -22,6 +23,18 @@ class DashboardController extends Controller
 
         $filter = $request->get('filter', 'Semua');
         $search = $request->get('search', '');
+        $filter = $request->get('filter', 'Semua');
+        $search = $request->get('search', '');
+
+        // ─── LOG RIWAYAT PENCARIAN (untuk fitur CBF AI) ─────────────
+        if ($search) {
+        Pencarian::create([
+        'id_pencari' => $user->id,
+        'keyword'    => $search,
+        'lokasi'     => '', 
+        'waktu'      => now(),
+    ]);
+}
 
         // ─── REKOMENDASI AI (dari FastAPI, real-time) ─────────────────
         $rekomendasiAI = $this->getRekomendasiAI($user->id);
