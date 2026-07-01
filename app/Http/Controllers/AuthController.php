@@ -85,7 +85,7 @@ class AuthController extends Controller
             }
 
             // SUDAH onboarding
-            return redirect('/');
+            return redirect()->route('dashboard');
         }
 
         return back()->with('error', 'Login gagal');
