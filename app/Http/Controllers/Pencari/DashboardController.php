@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Pencari;
 use App\Http\Controllers\Controller;
 use App\Models\Restoran;
 use App\Models\Menu;
+use App\Models\Favorit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class DashboardController extends Controller
 {
@@ -15,147 +17,287 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // Redirect berdasarkan role
-        $role = $user->role;
-        if ($role === 'admin') return redirect('/admin/index');
-        if ($role === 'pemilik_usaha') return redirect('/pemilik/dashboard');
+        if ($user->role === 'admin') return redirect('/admin/index');
+        if ($user->role === 'pemilik_usaha') return redirect('/pemilik/dashboard');
 
         $filter = $request->get('filter', 'Semua');
-        $search = $request->get('search', '');
+        $search = $request->input('search') ?? '';
 
-        // ─── REKOMENDASI AI (dari FastAPI, real-time) ─────────────────
+        // GPS
+        if ($request->has('lat') && $request->has('lng')) {
+            session([
+                'user_lat' => (float) $request->lat,
+                'user_lng' => (float) $request->lng
+            ]);
+        }
+
+        $userLat = (float) session('user_lat', $user->latitude ?? 0);
+        $userLng = (float) session('user_lng', $user->longitude ?? 0);
+
+        $hasLokasi = ($userLat != 0.0 || $userLng != 0.0);
+
+
+        // ================================
+        // AI REKOMENDASI
+        // ================================
         $rekomendasiAI = $this->getRekomendasiAI($user->id);
 
-        // ─── POPULER ────────────────────────────────────────────────
+
+        // ================================
+        // POPULER (AI TREND LAMA)
+        // ================================
         $populer = Menu::with('restoran')
             ->where('tersedia', 1)
             ->inRandomOrder()
             ->take(6)
             ->get();
 
-        // ─── TERDEKAT ───────────────────────────────────────────────
-        $terdekat = Restoran::orderBy('nama_restoran')
-            ->take(5)
-            ->get();
 
-        // ─── FILTER & PENCARIAN ─────────────────────────────────────
+        // ================================
+        // TERDEKAT (TOPSIS)
+        // ================================
+        $terdekat = $this->getTerdekatTopsis(
+            $userLat,
+            $userLng
+        );
+
+
         $restorans = null;
+        $menuResults = null;
+
+
         if ($search || $filter !== 'Semua') {
-            $query = Restoran::with('menus')
-                ->select(
-                    'id_restoran', 'nama_restoran', 'alamat', 'kota',
-                    'status_halal', 'rating', 'jumlah_ulasan',
-                    'harga_rata_rata_min', 'harga_rata_rata_max',
-                    'foto_utama', 'jam_operasional', 'deskripsi',
-                    'latitude', 'longitude'
+
+            [$restorans, $menuResults] =
+                $this->getSearchResults(
+                    $search,
+                    $filter,
+                    $request
                 );
-
-            if ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('nama_restoran', 'like', "%{$search}%")
-                      ->orWhere('alamat', 'like', "%{$search}%")
-                      ->orWhere('kota', 'like', "%{$search}%")
-                      ->orWhereHas('menus', fn($q2) =>
-                          $q2->where('nama_menu', 'like', "%{$search}%")
-                      );
-                });
-            }
-
-            switch ($filter) {
-                case 'Pedas':
-                    $query->whereHas('menus', fn($q) =>
-                        $q->where('nama_menu', 'like', '%pedas%')
-                          ->orWhere('nama_menu', 'like', '%sambal%')
-                          ->orWhere('nama_menu', 'like', '%geprek%')
-                          ->orWhere('nama_menu', 'like', '%gepuk%')
-                          ->orWhere('deskripsi', 'like', '%pedas%')
-                    );
-                    break;
-                case 'Murah':
-                    $query->where(function ($q) {
-                        $q->where('harga_rata_rata_min', '<=', 20000)
-                          ->orWhereNull('harga_rata_rata_min')
-                          ->orWhereHas('menus', fn($q2) =>
-                              $q2->where('harga', '<=', 15000)
-                          );
-                    });
-                    break;
-                case 'Terdekat':
-                    $query->orderBy('kota');
-                    break;
-                case 'Favorit':
-                    $favIds = \App\Models\Favorit::where('user_id', Auth::id())
-                        ->pluck('id_restoran');
-                    $query->whereIn('id_restoran', $favIds);
-                    break;
-            }
-
-            $restorans = $query->paginate(12)->appends($request->query());
         }
+
 
         return view('dashboard', compact(
             'rekomendasiAI',
             'populer',
             'terdekat',
             'restorans',
+            'menuResults',
             'filter',
-            'search'
+            'search',
+            'hasLokasi'
         ));
     }
 
-    /**
-     * Panggil FastAPI untuk dapat rekomendasi resto dari model hybrid AI
-     * (CF + CBF + Trend), lalu ambil 1 menu representatif dari resto teratas.
-     */
+    // ══════════════════════════════════════════════════════════
+    //  TERDEKAT — Haversine + TOPSIS
+    // ══════════════════════════════════════════════════════════
+
+    private function getTerdekatTopsis(float $userLat, float $userLng)
+    {
+       $restorans = Restoran::withCount('menus as jumlah_menu')
+        ->withAvg('ulasan', 'rating')
+        ->take(20)
+        ->get();
+            if ($restorans->isEmpty()) return collect();
+
+        $restorans->each(function ($r) use ($userLat, $userLng) {
+            $r->jarak_km = $this->hitungJarak(
+                $userLat, $userLng,
+                (float) ($r->latitude  ?? 0),
+                (float) ($r->longitude ?? 0)
+            );
+        });
+
+        $payload = $restorans->map(fn($r) => [
+            'id_restoran'   => $r->id_restoran,
+            'nama_restoran' => $r->nama_restoran,
+            'kota'          => $r->kota ?? '',
+            'rating' => round((float) ($r->ulasan_avg_rating ?? 0), 1),
+            'status_halal'  => $r->status_halal ?? 'none',
+            'jarak_km'      => $r->jarak_km,
+            'jumlah_menu'   => (int) ($r->jumlah_menu ?? 0),
+        ])->toArray();
+
+        $ranked = $this->callTopsis('/topsis/terdekat', ['restorans' => $payload]);
+
+        if (empty($ranked)) return $restorans->take(5);
+
+        $orderedIds = collect($ranked)->take(5)->pluck('id_restoran');
+        return $restorans
+            ->whereIn('id_restoran', $orderedIds->all())
+            ->sortBy(fn($r) => $orderedIds->search($r->id_restoran))
+            ->values();
+    }
+
+    // ══════════════════════════════════════════════════════════
+    //  PENCARIAN CAMPURAN
+    // ══════════════════════════════════════════════════════════
+
+    private function getSearchResults(?string $search, string $filter, Request $request): array
+    {
+        $search = $search ?? '';
+        $qResto = Restoran::select(
+            'id_restoran',
+            'nama_restoran',
+            'alamat',
+            'kota',
+            'status_halal',
+            'rating',
+            'jumlah_ulasan',
+            'harga_rata_rata_min',
+            'harga_rata_rata_max',
+            'foto_utama',
+            'latitude',
+            'longitude'
+        )
+        ->with('menus')
+        ->withAvg('ulasan', 'rating');
+        $qMenu = Menu::with('restoran')->where('tersedia', 1);
+
+        if ($search) {
+            $qResto->where(function ($q) use ($search) {
+                $q->where('nama_restoran', 'like', "%{$search}%")
+                ->orWhere('alamat',       'like', "%{$search}%")
+                ->orWhere('kota',         'like', "%{$search}%");
+            });
+            $qMenu->where(function ($q) use ($search) {
+                $q->where('nama_menu',   'like', "%{$search}%")
+                ->orWhere('deskripsi', 'like', "%{$search}%")
+                ->orWhereHas('restoran', fn($q2) =>
+                    $q2->where('nama_restoran', 'like', "%{$search}%")
+                );
+            });
+        }
+
+        switch ($filter) {
+            case 'Pedas':
+                $qResto->whereHas('menus', fn($q) =>
+                    $q->where('nama_menu', 'like', '%pedas%')
+                    ->orWhere('nama_menu', 'like', '%sambal%')
+                    ->orWhere('nama_menu', 'like', '%geprek%')
+                    ->orWhere('deskripsi', 'like', '%pedas%')
+                );
+                $qMenu->where(fn($q) =>
+                    $q->where('nama_menu', 'like', '%pedas%')
+                    ->orWhere('nama_menu', 'like', '%sambal%')
+                    ->orWhere('nama_menu', 'like', '%geprek%')
+                    ->orWhere('deskripsi', 'like', '%pedas%')
+                );
+                break;
+            case 'Murah':
+                $qResto->where(fn($q) =>
+                    $q->where('harga_rata_rata_min', '<=', 20000)->orWhereNull('harga_rata_rata_min')
+                );
+                $qMenu->where('harga', '<=', 15000);
+                break;
+            case 'Favorit':
+                $favIds = Favorit::where('user_id', Auth::id())->pluck('id_restoran');
+                $qResto->whereIn('id_restoran', $favIds);
+                $qMenu->whereIn('id_restoran', $favIds);
+                break;
+        }
+
+        $restorans = $qResto
+            ->paginate(8, ['*'], 'resto_page')
+            ->appends($request->query());
+
+        $menus = $qMenu
+            ->paginate(8, ['*'], 'menu_page')
+            ->appends($request->query());
+
+        // ambil lokasi user
+        $userLat = session('user_lat', 0);
+        $userLng = session('user_lng', 0);
+
+        // hitung jarak restoran
+        $restorans->getCollection()->transform(function($restoran) use ($userLat,$userLng){
+            $restoran->jarak_km = $this->hitungJarak(
+                $userLat,
+                $userLng,
+                $restoran->latitude ?? 0,
+                $restoran->longitude ?? 0
+            );
+            return $restoran;
+        });
+
+        // HITUNG JARAK MENU LANGSUNG DARI RESTORANNYA
+        $menus->getCollection()->transform(function($menu) use ($userLat, $userLng){
+            // Ambil jarak dari restoran menu
+            $menu->jarak_km = $this->hitungJarak(
+                $userLat,
+                $userLng,
+                $menu->restoran->latitude ?? 0,
+                $menu->restoran->longitude ?? 0
+            );
+            return $menu;
+        });
+
+        return [
+            $restorans,
+            $menus
+        ];
+    }
+
+    // ══════════════════════════════════════════════════════════
+    //  REKOMENDASI AI — FastAPI
+    // ══════════════════════════════════════════════════════════
+
     private function getRekomendasiAI($userId)
     {
         try {
-            $client = new Client(['timeout' => 5]);
-            $response = $client->get("http://127.0.0.1:8001/rekomendasi/{$userId}", [
-                'query' => ['n' => 5]
-            ]);
+            $response = Http::timeout(5)
+                ->get("http://127.0.0.1:8001/rekomendasi/{$userId}", ['n' => 5]);
+            $data = $response->json();
 
-            $data = json_decode($response->getBody(), true);
+            if (empty($data['rekomendasi'])) return $this->fallbackRekomendasi();
 
-            if (empty($data['rekomendasi'])) {
-                return $this->fallbackRekomendasi();
-            }
-
-            // Ambil resto rangking #1 dari hasil AI
             $topResto = $data['rekomendasi'][0];
-            $idRestoran = $topResto['id_restoran'];
+            $menu = Menu::where('id_restoran', $topResto['id_restoran'])
+                ->where('tersedia', 1)->inRandomOrder()->first();
 
-            // Cari 1 menu representatif dari resto itu
-            $menu = Menu::where('id_restoran', $idRestoran)
-                ->where('tersedia', 1)
-                ->inRandomOrder()
-                ->first();
-
-            if (!$menu) {
-                return $this->fallbackRekomendasi();
-            }
+            if (!$menu) return $this->fallbackRekomendasi();
 
             $menu->load('restoran');
-            $menu->ai_score = $topResto['score']; // skor dari model AI
-
+            $menu->ai_score = $topResto['score'];
             return $menu;
 
         } catch (\Exception $e) {
-            \Log::warning('FastAPI tidak terjangkau: ' . $e->getMessage());
+            Log::warning('FastAPI tidak terjangkau: ' . $e->getMessage());
             return $this->fallbackRekomendasi();
         }
     }
 
-    /**
-     * Fallback kalau FastAPI tidak bisa diakses (server mati, dll)
-     * supaya dashboard tidak crash.
-     */
     private function fallbackRekomendasi()
     {
         return Menu::with('restoran')
             ->whereHas('restoran', fn($q) => $q->where('status_halal', 'certified'))
-            ->where('tersedia', 1)
-            ->inRandomOrder()
-            ->first();
+            ->where('tersedia', 1)->inRandomOrder()->first();
+    }
+
+    // ══════════════════════════════════════════════════════════
+    //  HELPERS
+    // ══════════════════════════════════════════════════════════
+
+    private function callTopsis(string $endpoint, array $body): array
+    {
+        try {
+            $url      = config('services.topsis.url', 'http://127.0.0.1:5001');
+            $response = Http::timeout(3)->post($url . $endpoint, $body);
+            return $response->successful() ? ($response->json()['ranked'] ?? []) : [];
+        } catch (\Exception $e) {
+            Log::warning("TOPSIS API ({$endpoint}): " . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function hitungJarak(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        if (($lat1 === 0.0 && $lng1 === 0.0) || ($lat2 === 0.0 && $lng2 === 0.0)) return 999.0;
+        $R    = 6371;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+        $a    = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
+        return round($R * 2 * atan2(sqrt($a), sqrt(1 - $a)), 1);
     }
 }

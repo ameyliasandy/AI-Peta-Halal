@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Favorit;
 use App\Models\PreferensiUser;
 use App\Models\Restoran;
+use App\Models\Menu;
 
 class ProfileController extends Controller
 {
@@ -81,21 +82,78 @@ class ProfileController extends Controller
 
     public function favorit()
     {
-        $favorit = Favorit::with('restoran')
-            ->where('user_id', Auth::id())
-            ->latest()
-            ->paginate(12);
-
+        $favorit = Favorit::with([
+            'restoran',
+            'menu.restoran'
+        ])
+        ->where('user_id', Auth::id())
+        ->latest()
+        ->paginate(12);
+        
         return view('profile.favorit', compact('favorit'));
     }
 
     public function hapusFavorit($id)
     {
         Favorit::where('user_id', Auth::id())
-               ->where('id_restoran', $id)
-               ->delete();
+            ->where(function($q) use($id) {
+                $q->where('id_restoran', $id)
+                  ->orWhere('id_menu', $id);
+            })
+            ->delete();
 
         return back()->with('success', 'Dihapus dari favorit.');
+    }
+
+    public function toggleFavorit(Request $request)
+    {
+        $request->validate([
+            'id_restoran' => 'nullable',
+            'id_menu' => 'nullable'
+        ]);
+
+
+        $user = Auth::id();
+
+
+        $favorit = Favorit::where('user_id',$user)
+            ->where(function($q) use ($request){
+
+                if($request->id_restoran){
+                    $q->where('id_restoran',$request->id_restoran);
+                }
+
+                if($request->id_menu){
+                    $q->orWhere('id_menu',$request->id_menu);
+                }
+
+            })
+            ->first();
+
+
+        if($favorit){
+
+            $favorit->delete();
+
+            return response()->json([
+                'status'=>'hapus',
+                'message'=>'Dihapus dari favorit'
+            ]);
+
+        }
+
+
+        Favorit::create([
+            'user_id'=>$user,
+            'id_restoran'=>$request->id_restoran,
+            'id_menu'=>$request->id_menu
+        ]);
+
+
+        return response()->json([
+            'status'=>'tambah',
+            'message'=>'Ditambahkan ke favorit'
+        ]);
     }
 
     // ───────────────────────────────────────

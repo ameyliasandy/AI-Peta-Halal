@@ -17,15 +17,11 @@ use App\Http\Controllers\RestoranPublicController;
 use App\Http\Controllers\UlasanController;
 
 //HALAMAN UTAMA (GUEST)
-Route::get('/', function () {
-    if (Auth::check()) {
-        $role = Auth::user()->role;
-        if ($role === 'admin') return redirect('/admin/index');
-        if ($role === 'pemilik_usaha') return redirect('/pemilik/dashboard');
-        return redirect('/dashboard');
-    }
-    return app(GuestController::class)->index();
-});
+Route::get('/', [GuestController::class, 'index']);
+
+// ─── RESTORAN PUBLIK (GUEST) ──────────────────────────────
+Route::get('/restoran/{id}', [GuestController::class, 'showRestoran'])
+    ->name('restoran.show');
 
 //AUTH
 Route::get('/register', [AuthController::class, 'showRegister']);
@@ -44,10 +40,6 @@ Route::post('/onboarding', [OnboardingController::class, 'store']);
 Route::get('/dashboard', [PencariDashboardController::class, 'index'])
     ->middleware('auth')
     ->name('dashboard');
-
-// ─── RESTORAN PUBLIK (PENCARI) ─────────────────────────────────────────────
-Route::get('/restoran/{id}', [RestoranPublicController::class, 'show'])
-    ->name('restoran.show');
 
 // ─── REKOMENDASI ────────────────────────────────────────────────────────────
 Route::get('/rekomendasi', [RekomendasiController::class, 'index'])
@@ -116,9 +108,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile/hapus', [ProfileController::class, 'hapusAkun'])->name('profile.hapus');
 
     // Favorit
-    Route::get('/favorit', [ProfileController::class, 'favorit'])->name('profile.favorit');
-    Route::delete('/favorit/{id}', [ProfileController::class, 'hapusFavorit'])->name('profile.favorit.hapus');
+    Route::get('/favorit', [ProfileController::class, 'favorit'])
+        ->name('profile.favorit');
 
+    Route::delete('/profile/favorit/hapus/{id}', [ProfileController::class, 'hapusFavorit'])->name('profile.favorit.hapus');
+
+    Route::post('/favorit/toggle',
+        [ProfileController::class,'toggleFavorit']
+    )->name('favorit.toggle');
+    
     // Preferensi
     Route::get('/preferensi', [ProfileController::class, 'preferensi'])->name('profile.preferensi');
     Route::post('/preferensi', [ProfileController::class, 'updatePreferensi'])->name('profile.preferensi.update');
