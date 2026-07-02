@@ -28,4 +28,9 @@ class RestoranPublicController extends Controller
         // Kirim ke view pencari.detail_toko
         return view('pencari.detail_toko', compact('restoran'));
     }
+
+    public function favorit()
+    {
+        return $this->hasMany(Favorit::class,'id_restoran','id_restoran');
+    }
 }

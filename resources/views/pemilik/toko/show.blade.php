@@ -94,6 +94,20 @@ input:focus,select:focus,textarea:focus{
   border-color:var(--g);box-shadow:0 0 0 3px rgba(26,158,92,.08)
 }
 textarea{resize:vertical;min-height:66px}
+
+.map-box{
+    border-radius:12px;
+    overflow:hidden;
+    height:210px;
+    background:var(--s1);
+}
+
+.map-box iframe{
+    width:100%;
+    height:100%;
+    border:none;
+    display:block;
+}
 </style>
 @endpush
 
@@ -115,16 +129,27 @@ textarea{resize:vertical;min-height:66px}
           </svg>
           Edit Profil
         </button>
-        @if($restoran->latitude)
-        <a href="https://maps.google.com/?q={{ $restoran->latitude }},{{ $restoran->longitude }}"
-           target="_blank" class="btn btn-outline">
+        @php
+            $lokasiMaps = trim(
+                ($restoran->nama_restoran ?? '') . ', ' .
+                ($restoran->alamat ?? '') . ', Batam'
+            );
+
+            $queryMaps = urlencode($lokasiMaps);
+        @endphp
+
+
+        <a href="https://www.google.com/maps/search/?api=1&query={{ $queryMaps }}"
+          target="_blank"
+          class="btn btn-outline">
+
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
             <circle cx="12" cy="10" r="3"/>
           </svg>
+
           Lihat di Peta
         </a>
-        @endif
       </div>
     </div>
   </div>

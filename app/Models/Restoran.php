@@ -41,6 +41,7 @@ class Restoran extends Model
         'status_buka' => 'boolean',
     ];
 
+    // ============= RELASI =============
     public function ulasan()
     {
         return $this->hasMany(Ulasan::class, 'id_restoran', 'id_restoran');
@@ -87,6 +88,40 @@ class Restoran extends Model
         return $this->hasMany(VerifikasiHalal::class, 'id_restoran', 'id_restoran');
     }
 
+    // ============= METODE RATING & ULASAN =============
+    /**
+     * Hitung rata-rata rating dari semua ulasan
+     */
+    public function rataRataRating()
+    {
+        return $this->ulasan()->avg('rating') ?? 0;
+    }
+
+    /**
+     * Hitung jumlah ulasan
+     */
+    public function jumlahUlasan()
+    {
+        return $this->ulasan()->count();
+    }
+
+    /**
+     * Accessor untuk rating rata-rata
+     */
+    public function getRatingRataRataAttribute()
+    {
+        return $this->ulasan()->avg('rating') ?? 0;
+    }
+
+    /**
+     * Accessor untuk total ulasan
+     */
+    public function getTotalUlasanAttribute()
+    {
+        return $this->ulasan()->count();
+    }
+
+    // ============= LABEL & FORMAT =============
     public function getStatusHalalLabelAttribute(): string
     {
         return match($this->status_halal) {
@@ -105,7 +140,7 @@ class Restoran extends Model
         return '-';
     }
 
-    // FUNGSI BARU UNTUK TAMPILKAN FOTO (URL)
+    // ============= FOTO =============
     public function getFotoUtamaUrl()
     {
         if (!empty($this->foto_utama)) {
@@ -115,7 +150,6 @@ class Restoran extends Model
         return $this->getDefaultFoto();
     }
 
-    // FUNGSI DEFAULT FOTO
     private function getDefaultFoto()
     {
         $text = strtolower(

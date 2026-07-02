@@ -77,4 +77,9 @@ public function rekomendasiRestoran()
             'notif_ulasan'      => 'boolean',   
         ];
     }
+
+public function favorit()
+{
+    return $this->hasMany(Favorit::class,'user_id');
+}
 }
