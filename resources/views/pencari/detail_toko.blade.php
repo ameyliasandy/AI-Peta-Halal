@@ -489,36 +489,13 @@
           </div>
         @endif
       </div>
-
-      {{-- Info singkat --}}
-      <div class="vc">
-        <div class="vc-t">Informasi</div>
-        <div class="vr">
-          <span class="vl">Jam Buka</span>
-          <span class="vv">{{ $restoran->jam_operasional ?? '—' }}</span>
-        @if($restoran->no_telepon)
-        <div class="vr">
-          <span class="vl">Telepon</span>
-          <span class="vv">{{ $restoran->no_telepon }}</span>
-        </div>
-        @endif
-        @if($restoran->website_sosmed)
-        <div class="vr">
-          <span class="vl">Media Sosial</span>
-          <a href="{{ $restoran->website_sosmed }}" target="_blank"
-             class="vv" style="color:var(--g);word-break:break-all;text-decoration:none">
-            {{ Str::limit($restoran->website_sosmed, 22) }}
-          </a>
-        </div>
-        @endif
-      </div>
     </div>
   </div>
 
-  {{-- MENU — read only --}}
+  {{-- MENU --}}
   @if($restoran->menu->count() > 0)
   <div id="menu-section" style="margin-top:24px">
-    @include('detail_toko.grid_menu')
+      @include('detail_toko.grid_menu')
   </div>
   @endif
 

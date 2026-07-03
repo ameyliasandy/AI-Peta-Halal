@@ -14,8 +14,7 @@
 
     <div class="modal-body">
       <form id="editTokoF" enctype="multipart/form-data">
-        @csrf
-        @method('PUT') 
+      @csrf
         
         <div style="display:flex;flex-direction:column;gap:14px">
 
@@ -117,24 +116,28 @@
 </div>
 
 <script>
-const URL_UPDATE_TOKO = "{{ route('pemilik.toko.update', $restoran->id_restoran) }}";
+const URL_UPDATE_TOKO = "{{ url($urlUpdate) }}";
 
   async function saveEditToko(){
 
-      const fd = new FormData(
-          document.getElementById('editTokoF')
-      );
+    const fd = new FormData(
+        document.getElementById('editTokoF')
+    );
 
-      try {
+    @if(!$isAdmin)
+        fd.append('_method', 'PUT');
+    @endif
 
-          const res = await fetch(URL_UPDATE_TOKO,{
-              method:'POST',
-              headers:{
-                  'X-CSRF-TOKEN':CSRF,
-                  'Accept':'application/json'
-              },
-              body:fd
-          });
+    try {
+
+        const res = await fetch(URL_UPDATE_TOKO,{
+            method:'POST',
+            headers:{
+                'X-CSRF-TOKEN':CSRF,
+                'Accept':'application/json'
+            },
+            body:fd
+        });
 
     const d = await res.json();
     if (d.success) {

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB; 
 
 class DashboardController extends Controller
 {
@@ -20,6 +21,10 @@ class DashboardController extends Controller
 
         if ($user->role === 'admin') return redirect('/admin/index');
         if ($user->role === 'pemilik_usaha') return redirect('/pemilik/dashboard');
+
+        $showOnboarding = !DB::table('preferensi_users')
+        ->where('user_id', $user->id)
+        ->exists();
 
         $filter = $request->get('filter', 'Semua');
         $search = $request->input('search') ?? '';
@@ -96,7 +101,8 @@ class DashboardController extends Controller
             'menuResults',
             'filter',
             'search',
-            'hasLokasi'
+            'hasLokasi',
+            'showOnboarding'
         ));
     }
 

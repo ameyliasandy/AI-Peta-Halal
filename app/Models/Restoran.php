@@ -4,6 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
 use App\Models\Rekomendasi;
+use Carbon\Carbon;
 
 class Restoran extends Model
 {
@@ -192,5 +193,35 @@ class Restoran extends Model
         }
 
         return asset('images/restoran/default.jpg');
+    }
+
+    public function getSedangBukaAttribute()
+    {
+        if (!$this->jam_operasional) {
+            return false;
+        }
+
+        $jam = str_replace(' ', '', $this->jam_operasional);
+
+        if (!str_contains($jam, '-')) {
+            return false;
+        }
+
+        [$buka, $tutup] = explode('-', $jam);
+
+        $now = Carbon::now();
+
+        $jamBuka = Carbon::today()->setTimeFromTimeString($buka);
+        $jamTutup = Carbon::today()->setTimeFromTimeString($tutup);
+
+        if ($jamTutup->lessThan($jamBuka)) {
+            $jamTutup->addDay();
+
+            if ($now->lessThan($jamBuka)) {
+                $now->addDay();
+            }
+        }
+
+        return $now->between($jamBuka, $jamTutup);
     }
 }

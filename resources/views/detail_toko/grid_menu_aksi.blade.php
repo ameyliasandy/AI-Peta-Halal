@@ -237,7 +237,7 @@
 
 <script>
 const URL_STORE_MENU  = '{{ $urlStoreMenu }}';
-const URL_UPDATE_MENU = "{{ url('pemilik/toko/menu') }}";
+const URL_UPDATE_MENU = "{{ url($urlUpdateMenu) }}";
 const URL_DELETE_MENU = '{{ $urlDeleteMenu }}';
 
 let editMenuId = null;

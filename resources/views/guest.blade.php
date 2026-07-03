@@ -203,7 +203,7 @@
      TAMPILAN NORMAL (tanpa pencarian)
 ══════════════════════════════════════════ --}}
 @else
-<div class="px-4 md:px-16 lg:px-32 mt-5 grid grid-cols-1 lg:grid-cols-3 gap-6 pb-10">
+<div class="px-4 md:px-16 lg:px-32 mt-5 space-y-6 pb-10">
 
     {{-- Kolom Kiri --}}
     <div class="lg:col-span-2 space-y-6">
@@ -310,7 +310,7 @@
     </div>
 
     {{-- Kolom Kanan Desktop — Terdekat --}}
-    <div class="hidden lg:block">
+    <div class="mt-6">
         <div class="flex justify-between items-center mb-3">
             <h2 class="font-bold text-gray-800">Terdekat darimu</h2>
             @if(!$hasLokasi)
@@ -562,5 +562,7 @@ window.addEventListener('load', () => {
 });
 @endif
 </script>
+
+@include('onboarding.index')
 
 @endsection

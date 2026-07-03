@@ -34,10 +34,15 @@
     <span>{{ number_format($restoran->rating ?? 0, 1) }} ({{ $restoran->jumlah_ulasan ?? 0 }} ulasan)</span>
   </div>
   <div style="display:flex;align-items:center;gap:5px">
-    <span class="dot" style="background:{{ $restoran->status_buka ? '#22c55e' : 'var(--r)' }}"></span>
-    <span style="color:{{ $restoran->status_buka ? '#22c55e' : 'var(--r)' }}">
-      {{ $restoran->status_buka ? 'Buka sekarang' : 'Tutup' }}
-    </span>
+    @if($restoran->sedang_buka)
+        <span style="color:#22c55e">
+            Buka • Sampai {{ explode('-', str_replace(' ','',$restoran->jam_operasional))[1] }}
+        </span>
+    @else
+        <span style="color:#ef4444">
+            Tutup • Buka {{ explode('-', str_replace(' ','',$restoran->jam_operasional))[0] }}
+        </span>
+    @endif
   </div>
 </div>
 

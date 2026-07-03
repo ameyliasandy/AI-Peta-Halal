@@ -7,11 +7,24 @@ use App\Models\Menu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth; // ⬅️ tambahkan ini
 
 class GuestController extends Controller
 {
     public function index(Request $request)
     {
+        // ─── Kalau sudah login, jangan tampilkan homepage guest ───
+        // Ini yang bikin "nabrak": pencari yg login masih bisa lihat halaman guest.
+        if (Auth::check()) {
+            $user = Auth::user();
+            if ($user->role === 'admin')         return redirect('/admin/index');
+            if ($user->role === 'pemilik_usaha') return redirect('/pemilik/dashboard');
+            if ($user->role === 'pencari')       return redirect()->route('dashboard');
+        }
+
+        // ─── Guest SELALU ditanya onboarding kalau belum isi di sesi ini ───
+        $showOnboarding = !session()->has('guest_preferensi');
+
         // GPS
         if ($request->has('lat') && $request->has('lng')) {
             session([
@@ -31,7 +44,6 @@ class GuestController extends Controller
             ->take(8)
             ->get();
 
-        // Hitung jarak untuk populer
         $populer->transform(function($menu) use ($userLat, $userLng) {
             $menu->jarak_km = $this->hitungJarak(
                 $userLat,
@@ -42,16 +54,14 @@ class GuestController extends Controller
             return $menu;
         });
 
-        // Terdekat (TOPSIS)
         $terdekat = $this->getTerdekatTopsis($userLat, $userLng);
 
         $totalResto = Restoran::count();
         $totalCertified = Restoran::where('status_halal', 'certified')->count();
 
-        // Filter dan search
         $filter = $request->get('filter', 'Semua');
         $search = $request->input('search') ?? '';
-        
+
         $restorans = null;
         $menuResults = null;
 
@@ -68,12 +78,13 @@ class GuestController extends Controller
             'filter',
             'search',
             'restorans',
-            'menuResults'
+            'menuResults',
+            'showOnboarding'
         ));
     }
 
     // ══════════════════════════════════════════════════════════
-    //  DETAIL RESTO PUBLIK (GUEST)
+    //  DETAIL RESTO — dispatch sesuai role (guest vs pencari)
     // ══════════════════════════════════════════════════════════
 
     public function showRestoran($id)
@@ -83,10 +94,9 @@ class GuestController extends Controller
             ->withCount('ulasan')
             ->findOrFail($id);
 
-        // Hitung jarak
         $userLat = (float) session('user_lat', 0);
         $userLng = (float) session('user_lng', 0);
-        
+
         $restoran->jarak_km = $this->hitungJarak(
             $userLat,
             $userLng,
@@ -94,6 +104,16 @@ class GuestController extends Controller
             (float) ($restoran->longitude ?? 0)
         );
 
+        // ⬇️ INI KUNCI FIX-NYA:
+        // Route 'restoran.show' dipakai bareng-bareng oleh dashboard (pencari)
+        // dan guest.blade. Daripada bikin route terpisah (yang berisiko lupa
+        // diganti di salah satu view), kita cek role di sini dan render
+        // view yang sesuai.
+        if (Auth::check() && Auth::user()->role === 'pencari') {
+            return view('pencari.detail_toko', compact('restoran'));
+        }
+
+        // Guest (atau role lain yang nyasar ke sini) → view read-only
         return view('guest_detail', compact('restoran'));
     }
 

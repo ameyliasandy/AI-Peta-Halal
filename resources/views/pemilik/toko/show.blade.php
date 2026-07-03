@@ -211,8 +211,8 @@ textarea{resize:vertical;min-height:66px}
 ])
 
 @include('detail_toko.modal_edit_profil', [
-  'isAdmin'   => false,
-  'urlUpdate' => '/pemilik/toko/update',
+    'isAdmin'   => false,
+    'urlUpdate' => "/pemilik/toko/{$restoran->id_restoran}",
 ])
 
 <script>

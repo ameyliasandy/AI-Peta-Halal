@@ -88,7 +88,7 @@ class AuthController extends Controller
             return redirect()->route('dashboard');
         }
 
-        return back()->with('error', 'Login gagal');
+        return back()->with('error', 'Email atau Password Salah');
     }
 
     public function logout()

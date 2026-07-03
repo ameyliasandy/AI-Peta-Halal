@@ -8,18 +8,18 @@ use Illuminate\Support\Facades\DB;
 
 class OnboardingController extends Controller
 {
+    // Dipakai kalau ada yang buka /onboarding langsung (fallback, jarang dipakai lagi
+    // karena sekarang tampil sebagai modal di guest/dashboard)
     public function index()
     {
-        // kalau sudah onboarding jangan tampil lagi
         if (Auth::check()) {
-
             $sudahOnboarding = DB::table('preferensi_users')
                 ->where('user_id', Auth::id())
                 ->exists();
 
-            if ($sudahOnboarding) {
-                return redirect('/');
-            }
+            if ($sudahOnboarding) return redirect('/');
+        } elseif (session()->has('guest_preferensi')) {
+            return redirect('/');
         }
 
         return view('onboarding.index');
@@ -27,23 +27,43 @@ class OnboardingController extends Controller
 
     public function store(Request $request)
     {
+        // ─── SKIP ───────────────────────────────────────────
+        if ($request->boolean('skip')) {
+            if (Auth::check()) {
+                $user = Auth::user();
+
+                DB::table('preferensi_users')->where('user_id', $user->id)->delete();
+
+                // simpan penanda "sudah ditanya tapi skip" biar tidak muncul
+                // lagi tiap kali dashboard di-load, sesuai kesepakatan
+                // "pencari cuma ditanya sekali".
+                DB::table('preferensi_users')->insert([
+                    'user_id'    => $user->id,
+                    'kategori'   => 'skip',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                // guest: tandai sesi ini sudah "ditanya" tapi kosong
+                session(['guest_preferensi' => []]);
+            }
+
+            return $request->wantsJson()
+                ? response()->json(['status' => 'skipped'])
+                : redirect('/');
+        }
+
+        // ─── SUBMIT NORMAL ──────────────────────────────────
         $request->validate([
             'kategori' => 'required|array|size:3'
         ]);
 
-        // USER LOGIN
         if (Auth::check()) {
-
             $user = Auth::user();
 
-            // hapus lama
-            DB::table('preferensi_users')
-                ->where('user_id', $user->id)
-                ->delete();
+            DB::table('preferensi_users')->where('user_id', $user->id)->delete();
 
-            // simpan baru
             foreach ($request->kategori as $item) {
-
                 DB::table('preferensi_users')->insert([
                     'user_id'    => $user->id,
                     'kategori'   => $item,
@@ -51,16 +71,12 @@ class OnboardingController extends Controller
                     'updated_at' => now(),
                 ]);
             }
-
-            // selesai onboarding
-            return redirect('/');
+        } else {
+            session(['guest_preferensi' => $request->kategori]);
         }
 
-        // GUEST
-        session([
-            'guest_preferensi' => $request->kategori
-        ]);
-
-        return redirect('/');
+        return $request->wantsJson()
+            ? response()->json(['status' => 'saved'])
+            : redirect('/');
     }
 }
