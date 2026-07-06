@@ -116,6 +116,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/favorit/toggle',
         [ProfileController::class,'toggleFavorit']
     )->name('favorit.toggle');
+
+    Route::get('/favorit/cek/{id}', function($id) {
+        $favorit = Favorit::where('user_id', Auth::id())
+            ->where('id_menu', $id)
+            ->whereNull('id_restoran')
+            ->exists();
+        
+        return response()->json(['favorit' => $favorit]);
+    })->middleware('auth');
     
     // Preferensi
     Route::get('/preferensi', [ProfileController::class, 'preferensi'])->name('profile.preferensi');

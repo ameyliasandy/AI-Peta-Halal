@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB; 
 
+
 class DashboardController extends Controller
 {
     public function index(Request $request)
@@ -52,7 +53,20 @@ class DashboardController extends Controller
 
         $hasLokasi = ($userLat != 0.0 || $userLng != 0.0);
 
+        // ── Ambil ID favorit user ──
+        $userId = Auth::id();
+        $favoritRestoranIds = Favorit::where('user_id', $userId)
+            ->whereNotNull('id_restoran')
+            ->whereNull('id_menu')
+            ->pluck('id_restoran')
+            ->toArray();
 
+        $favoritMenuIds = Favorit::where('user_id', $userId)
+            ->whereNotNull('id_menu')
+            ->whereNull('id_restoran')
+            ->pluck('id_menu')
+            ->toArray();
+    
         // ================================
         // AI REKOMENDASI
         // ================================
@@ -102,7 +116,9 @@ class DashboardController extends Controller
             'filter',
             'search',
             'hasLokasi',
-            'showOnboarding'
+            'showOnboarding',
+            'favoritRestoranIds',
+            'favoritMenuIds'
         ));
     }
 
@@ -112,8 +128,8 @@ class DashboardController extends Controller
 
     private function getTerdekatTopsis(float $userLat, float $userLng)
     {
-       $restorans = Restoran::withCount('menus as jumlah_menu')
-        ->withAvg('ulasan', 'rating')
+       $restorans = Restoran::withAvg('ulasan', 'rating')
+        ->where('status_halal', 'certified')
         ->take(20)
         ->get();
             if ($restorans->isEmpty()) return collect();
@@ -126,15 +142,30 @@ class DashboardController extends Controller
             );
         });
 
-        $payload = $restorans->map(fn($r) => [
-            'id_restoran'   => $r->id_restoran,
-            'nama_restoran' => $r->nama_restoran,
-            'kota'          => $r->kota ?? '',
-            'rating' => round((float) ($r->ulasan_avg_rating ?? 0), 1),
-            'status_halal'  => $r->status_halal ?? 'none',
-            'jarak_km'      => $r->jarak_km,
-            'jumlah_menu'   => (int) ($r->jumlah_menu ?? 0),
-        ])->toArray();
+        $payload = $restorans->map(function ($r) {
+
+            return [
+
+                'id_restoran' => $r->id_restoran,
+
+                'nama_restoran' => $r->nama_restoran,
+
+                'jarak_km' => $r->jarak_km,
+
+                'harga' => (int)(
+    (
+        ($r->harga_rata_rata_min ?? 0) +
+        ($r->harga_rata_rata_max ?? 0)
+    ) / 2
+),
+
+                'rating' => round((float)($r->ulasan_avg_rating ?? 0),1),
+
+                'jam_operasional' => $this->nilaiJamOperasional($r->jam_operasional)
+
+            ];
+
+    })->toArray();
 
         $ranked = $this->callTopsis('/topsis/terdekat', ['restorans' => $payload]);
 
@@ -209,9 +240,23 @@ class DashboardController extends Controller
                 $qMenu->where('harga', '<=', 15000);
                 break;
             case 'Favorit':
-                $favIds = Favorit::where('user_id', Auth::id())->pluck('id_restoran');
-                $qResto->whereIn('id_restoran', $favIds);
-                $qMenu->whereIn('id_restoran', $favIds);
+                // Ambil favorit restoran
+                $favRestoIds = Favorit::where('user_id', Auth::id())
+                    ->whereNotNull('id_restoran')
+                    ->whereNull('id_menu')
+                    ->pluck('id_restoran');
+                
+                // Ambil favorit menu
+                $favMenuIds = Favorit::where('user_id', Auth::id())
+                    ->whereNotNull('id_menu')
+                    ->whereNull('id_restoran')
+                    ->pluck('id_menu');
+                
+                // Filter restoran yang difavoritkan
+                $qResto->whereIn('id_restoran', $favRestoIds);
+                
+                // Filter menu yang difavoritkan (berdasarkan id_menu, bukan id_restoran)
+                $qMenu->whereIn('id_menu', $favMenuIds);
                 break;
         }
 
@@ -254,6 +299,33 @@ class DashboardController extends Controller
             $restorans,
             $menus
         ];
+    }
+
+    private function nilaiJamOperasional($jam)
+    {
+        if(!$jam) return 0;
+
+        $jam = strtolower($jam);
+
+        if(str_contains($jam,'24'))
+            return 24;
+
+        preg_match_all('/(\d{2})[:.]\d{2}/',$jam,$hasil);
+
+        if(count($hasil[1])>=2){
+
+            $buka = (int)$hasil[1][0];
+
+            $tutup = (int)$hasil[1][1];
+
+            if($tutup < $buka){
+                $tutup += 24;
+            }
+
+            return $tutup-$buka;
+        }
+
+        return 12;
     }
 
     // ══════════════════════════════════════════════════════════

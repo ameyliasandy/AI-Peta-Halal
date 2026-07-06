@@ -11,7 +11,6 @@
 <div class="bg-[#2D6A4F] text-white px-4 pt-8 pb-14 md:px-16 lg:px-32">
     <div class="flex items-center justify-between mb-3">
         <p class="text-lg font-semibold tracking-wide">Petha</p>
-        {{-- Avatar --}}
         <button onclick="toggleProfile()"
             class="w-10 h-10 rounded-full bg-green-300 text-[#2D6A4F] font-bold flex items-center justify-center text-sm cursor-pointer hover:bg-green-200 transition select-none relative z-10">
             {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
@@ -20,11 +19,9 @@
     <h1 class="text-2xl font-bold">Hallo, {{ explode(' ', Auth::user()->name)[0] }}!</h1>
     <p class="text-sm opacity-70 mt-1">Mau makan apa hari ini?</p>
 
-    {{-- Search --}}
     <form method="GET" action="/dashboard" class="mt-4">
         <input type="hidden" name="filter" value="{{ $filter }}">
         <div class="bg-white/15 border border-white/30 rounded-2xl flex items-center px-4 py-3 gap-3">
-            {{-- Search icon (CSS) --}}
             <div class="relative w-4 h-4 flex-shrink-0">
                 <div class="w-3 h-3 rounded-full border-2 border-white/70 absolute top-0 left-0"></div>
                 <div class="w-px h-2 bg-white/70 absolute bottom-0 right-0 rotate-45 origin-top"></div>
@@ -71,7 +68,6 @@
     {{-- Menu --}}
     <div>
         <div class="flex items-center gap-2 mb-3">
-            {{-- Icon piring (CSS) --}}
             <div class="w-5 h-5 rounded-full border-2 border-gray-700 flex items-end justify-center pb-0.5">
                 <div class="w-3 h-px bg-gray-700 rounded"></div>
             </div>
@@ -83,11 +79,23 @@
         </div>
 
         @if($menuResults->isEmpty())
-        <p class="text-sm text-gray-400 py-4 pl-1">Tidak ada menu ditemukan.</p>
+            @if($filter === 'Favorit')
+            <div class="text-center py-8">
+                <p class="text-sm text-gray-400">Belum ada menu favorit.</p>
+                <a href="/dashboard?filter=Semua" class="text-xs text-[#2D6A4F] font-medium hover:underline mt-2 inline-block">
+                    Lihat semua menu
+                </a>
+            </div>
+            @else
+            <p class="text-sm text-gray-400 py-4 pl-1">Tidak ada menu ditemukan.</p>
+            @endif
         @else
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             @foreach($menuResults as $menu)
-            @php $st = $menu->restoran->status_halal ?? 'none'; @endphp
+            @php 
+                $st = $menu->restoran->status_halal ?? 'none';
+                $isFavoritMenu = in_array($menu->id_menu, $favoritMenuIds ?? []);
+            @endphp
             <div onclick="bukaModalMenu(this)"
                  data-nama="{{ $menu->nama_menu }}"
                  data-menu-id="{{ $menu->id_menu }}"
@@ -98,11 +106,15 @@
                  data-resto-id="{{ $menu->id_restoran }}"
                  data-halal="{{ $st }}"
                  data-jarak="{{ $menu->restoran->jarak_km ?? '' }}"
+                 data-is-favorit="{{ $isFavoritMenu ? 'true' : 'false' }}"
                  class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer group">
-                <div class="h-28 bg-gray-100 overflow-hidden">
+                <div class="h-28 bg-gray-100 overflow-hidden relative">
                     <img src="{{ $menu->foto_menu ?? ImageHelper::restoran($menu->restoran->nama_restoran ?? 'default') }}"
                          class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                          alt="{{ $menu->nama_menu }}">
+                    @if($isFavoritMenu)
+                    <div class="absolute top-2 right-2 text-lg">❤️</div>
+                    @endif
                 </div>
                 <div class="p-3">
                     <p class="font-semibold text-sm text-gray-800 leading-tight line-clamp-2">{{ $menu->nama_menu }}</p>
@@ -131,7 +143,6 @@
     {{-- Restoran --}}
     <div>
         <div class="flex items-center gap-2 mb-3">
-            {{-- Icon gedung (CSS) --}}
             <div class="flex flex-col items-center gap-px">
                 <div class="w-6 h-1 bg-gray-700 rounded-sm"></div>
                 <div class="flex gap-px">
@@ -148,17 +159,32 @@
         </div>
 
         @if($restorans->isEmpty())
-        <p class="text-sm text-gray-400 py-4 pl-1">Tidak ada restoran ditemukan.</p>
+            @if($filter === 'Favorit')
+            <div class="text-center py-8">
+                <p class="text-sm text-gray-400">Belum ada restoran favorit.</p>
+                <a href="/dashboard?filter=Semua" class="text-xs text-[#2D6A4F] font-medium hover:underline mt-2 inline-block">
+                    Lihat semua restoran
+                </a>
+            </div>
+            @else
+            <p class="text-sm text-gray-400 py-4 pl-1">Tidak ada restoran ditemukan.</p>
+            @endif
         @else
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             @foreach($restorans as $resto)
-            @php $st = $resto->status_halal; @endphp
+            @php 
+                $st = $resto->status_halal;
+                $isFavoritResto = in_array($resto->id_restoran, $favoritRestoranIds ?? []);
+            @endphp
             <a href="{{ route('restoran.show', $resto->id_restoran) }}"
                class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition block group">
-                <div class="h-28 bg-gray-100 overflow-hidden">
+                <div class="h-28 bg-gray-100 overflow-hidden relative">
                     <img src="{{ ImageHelper::restoran($resto->nama_restoran) }}"
                          class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                          alt="{{ $resto->nama_restoran }}">
+                    @if($isFavoritResto)
+                    <div class="absolute top-2 right-2 text-lg">❤️</div>
+                    @endif
                 </div>
                 <div class="p-3">
                     <p class="font-semibold text-sm text-gray-800 leading-tight line-clamp-2">{{ $resto->nama_restoran }}</p>
@@ -170,7 +196,6 @@
                     </div>
                     @endif
                     <div class="flex items-center gap-1 mt-1">
-                        {{-- Bintang (CSS) --}}
                         <div class="w-2.5 h-2.5 bg-yellow-400" style="clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)"></div>
                         <span class="text-xs text-gray-500">{{ number_format($resto->ulasan_avg_rating ?? $resto->rating ?? 0,1) }}</span>
                     </div>
@@ -195,29 +220,38 @@
                 <div class="w-5 h-px bg-gray-300 rounded"></div>
             </div>
         </div>
+        @if($filter === 'Favorit')
+        <p class="text-gray-500 font-medium">Belum ada favorit</p>
+        <p class="text-gray-400 text-sm mt-1">Mulai favoritkan restoran atau menu favoritmu</p>
+        @else
         <p class="text-gray-500 font-medium">Tidak ada hasil ditemukan</p>
         <p class="text-gray-400 text-sm mt-1">Coba kata kunci atau filter lain</p>
-        <a href="/dashboard" class="mt-4 inline-block text-sm text-[#2D6A4F] font-medium hover:underline">Kembali ke semua</a>
+        @endif
+        <a href="/dashboard?filter=Semua" class="mt-4 inline-block text-sm text-[#2D6A4F] font-medium hover:underline">
+            Kembali ke semua
+        </a>
     </div>
     @endif
 </div>
 
 {{-- ══════════════════════════════════════════
-     TAMPILAN NORMAL
+     TAMPILAN NORMAL (tanpa search)
 ══════════════════════════════════════════ --}}
 @else
 <div class="px-4 md:px-16 lg:px-32 mt-5 space-y-6 pb-10">
 
-    {{-- Kolom Kiri --}}
     <div class="space-y-6">
 
         {{-- Rekomendasi AI --}}
         @if($rekomendasiAI)
-        @php $restoAI = $rekomendasiAI->restoran; $stAI = $restoAI->status_halal ?? 'none'; @endphp
+        @php 
+            $restoAI = $rekomendasiAI->restoran; 
+            $stAI = $restoAI->status_halal ?? 'none';
+            $isFavAI = in_array($rekomendasiAI->id_menu, $favoritMenuIds ?? []);
+        @endphp
         <div>
             <div class="flex justify-between items-center mb-3">
                 <h2 class="font-bold text-gray-800">Rekomendasi untukmu</h2>
-                {{-- Badge AI --}}
                 <span class="inline-flex items-center gap-1.5 text-xs bg-green-50 text-[#2D6A4F] border border-green-200 px-2.5 py-1 rounded-full font-medium">
                     <div class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></div>
                     AI Hybrid
@@ -233,12 +267,12 @@
                  data-resto-id="{{ $rekomendasiAI->id_restoran }}"
                  data-halal="{{ $stAI }}"
                  data-jarak="{{ $restoAI->jarak_km ?? '' }}"
+                 data-is-favorit="{{ $isFavAI ? 'true' : 'false' }}"
                  class="bg-white rounded-2xl overflow-hidden shadow-sm cursor-pointer group hover:shadow-md transition">
                 <div class="h-44 md:h-64 bg-gray-200 relative overflow-hidden">
                     <img src="{{ $rekomendasiAI->foto_menu ?? ImageHelper::restoran($restoAI->nama_restoran ?? 'default') }}"
                          class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                          alt="{{ $rekomendasiAI->nama_menu }}">
-                    {{-- Halal badge overlay --}}
                     <span class="absolute bottom-3 left-3 inline-flex items-center gap-1.5 bg-white/90 text-xs px-3 py-1.5 rounded-full font-medium shadow-sm
                         {{ $stAI === 'certified' ? 'text-green-700' : ($stAI === 'self_claimed' ? 'text-yellow-700' : 'text-gray-600') }}">
                         <div class="w-1.5 h-1.5 rounded-full {{ $stAI === 'certified' ? 'bg-green-500' : ($stAI === 'self_claimed' ? 'bg-yellow-400' : 'bg-gray-400') }}"></div>
@@ -247,6 +281,9 @@
                         <span class="ml-1 text-[#2D6A4F] font-bold">{{ round($rekomendasiAI->ai_score * 100) }}% match</span>
                         @endif
                     </span>
+                    @if($isFavAI)
+                    <div class="absolute top-3 right-3 text-2xl bg-white/80 rounded-full w-10 h-10 flex items-center justify-center">❤️</div>
+                    @endif
                 </div>
                 <div class="p-4">
                     <h3 class="font-bold text-lg text-gray-800">{{ $rekomendasiAI->nama_menu }}</h3>
@@ -258,18 +295,19 @@
         </div>
         @endif
 
-        {{-- Populer Hari Ini — AI TREND --}}
+        {{-- Populer Hari Ini --}}
         <div>
             <div class="flex justify-between items-center mb-3">
                 <h2 class="font-bold text-gray-800">🔥 Populer hari ini</h2>
-                <span class="text-xs bg-green-100 text-[#2D6A4F] px-2 py-1 rounded-full font-medium">
-                    AI Trend
-                </span>
+                <span class="text-xs bg-green-100 text-[#2D6A4F] px-2 py-1 rounded-full font-medium">AI Trend</span>
             </div>
 
             <div class="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
                 @foreach($populer as $menu)
-                @php $stm = $menu->restoran->status_halal ?? 'none'; @endphp
+                @php 
+                    $stm = $menu->restoran->status_halal ?? 'none';
+                    $isFavPop = in_array($menu->id_menu, $favoritMenuIds ?? []);
+                @endphp
                 <div onclick="bukaModalMenu(this)"
                      data-nama="{{ $menu->nama_menu }}"
                      data-menu-id="{{ $menu->id_menu }}"
@@ -280,11 +318,15 @@
                      data-resto-id="{{ $menu->id_restoran }}"
                      data-halal="{{ $stm }}"
                      data-jarak="{{ $menu->restoran->jarak_km ?? '' }}"
+                     data-is-favorit="{{ $isFavPop ? 'true' : 'false' }}"
                      class="bg-white rounded-2xl overflow-hidden shadow-sm shrink-0 w-40 cursor-pointer hover:shadow-md transition group">
-                    <div class="h-24 bg-gray-100 overflow-hidden">
+                    <div class="h-24 bg-gray-100 overflow-hidden relative">
                         <img src="{{ $menu->foto_menu ?? ImageHelper::restoran($menu->restoran->nama_restoran ?? 'default') }}"
                              class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                              alt="{{ $menu->nama_menu }}">
+                        @if($isFavPop)
+                        <div class="absolute top-1 right-1 text-sm">❤️</div>
+                        @endif
                     </div>
                     <div class="p-2.5">
                         <p class="font-semibold text-xs text-gray-800 leading-tight line-clamp-2">{{ $menu->nama_menu }}</p>
@@ -318,12 +360,18 @@
             </div>
             <div class="space-y-3">
                 @foreach($terdekat as $resto)
-                @php $str = $resto->status_halal ?? 'none'; @endphp
+                @php 
+                    $str = $resto->status_halal ?? 'none';
+                    $isFavTer = in_array($resto->id_restoran, $favoritRestoranIds ?? []);
+                @endphp
                 <a href="{{ route('restoran.show', $resto->id_restoran) }}"
-                   class="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition block">
-                    <div class="w-10 h-10 bg-gray-100 rounded-xl flex-shrink-0 overflow-hidden">
+                   class="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition block relative">
+                    <div class="w-10 h-10 bg-gray-100 rounded-xl flex-shrink-0 overflow-hidden relative">
                         <img src="{{ ImageHelper::restoran($resto->nama_restoran) }}"
                              class="w-full h-full object-cover" alt="{{ $resto->nama_restoran }}">
+                        @if($isFavTer)
+                        <div class="absolute top-0 right-0 text-xs">❤️</div>
+                        @endif
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="font-semibold text-gray-800 text-sm truncate">{{ $resto->nama_restoran }}</p>
@@ -343,7 +391,6 @@
                             @endif
                         </div>
                     </div>
-                    {{-- Chevron right (CSS) --}}
                     <div class="w-4 h-4 flex items-center justify-center flex-shrink-0">
                         <div class="w-1.5 h-1.5 border-t-2 border-r-2 border-gray-300 rotate-45"></div>
                     </div>
@@ -377,7 +424,6 @@
 
         @if(!$hasLokasi)
         <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-center mb-4">
-            {{-- Lokasi pin (CSS) --}}
             <div class="w-10 h-10 mx-auto mb-3 flex items-center justify-center">
                 <div class="relative">
                     <div class="w-6 h-6 rounded-full border-2 border-amber-400 bg-amber-100"></div>
@@ -396,13 +442,19 @@
 
         <div class="space-y-3">
             @foreach($terdekat as $resto)
-            @php $str = $resto->status_halal ?? 'none'; @endphp
+            @php 
+                $str = $resto->status_halal ?? 'none';
+                $isFavTer = in_array($resto->id_restoran, $favoritRestoranIds ?? []);
+            @endphp
             <a href="{{ route('restoran.show', $resto->id_restoran) }}"
-               class="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition block group">
-                <div class="w-12 h-12 bg-gray-100 rounded-xl flex-shrink-0 overflow-hidden">
+               class="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition block group relative">
+                <div class="w-12 h-12 bg-gray-100 rounded-xl flex-shrink-0 overflow-hidden relative">
                     <img src="{{ ImageHelper::restoran($resto->nama_restoran) }}"
                          class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                          alt="{{ $resto->nama_restoran }}">
+                    @if($isFavTer)
+                    <div class="absolute top-0 right-0 text-sm">❤️</div>
+                    @endif
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="font-semibold text-gray-800 text-sm truncate">{{ $resto->nama_restoran }}</p>
@@ -448,11 +500,8 @@
     <div class="relative bg-white w-full md:w-[480px] md:rounded-3xl rounded-t-3xl overflow-hidden shadow-2xl z-10
                 max-h-[90vh] flex flex-col" id="modalPanel">
 
-        {{-- Foto --}}
         <div class="h-56 bg-gray-200 relative flex-shrink-0 overflow-hidden">
             <img id="modalFoto" src="" alt="" class="w-full h-full object-cover">
-
-            {{-- Tombol tutup (CSS X) --}}
             <button onclick="tutupModalMenu()"
                 class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 transition flex items-center justify-center">
                 <div class="relative w-3 h-3">
@@ -460,12 +509,9 @@
                     <div class="absolute inset-0 flex items-center"><div class="w-full h-0.5 bg-white -rotate-45"></div></div>
                 </div>
             </button>
-
-            {{-- Halal badge --}}
             <span id="modalHalalBadge" class="absolute bottom-3 left-3 text-xs px-3 py-1 rounded-full font-medium inline-flex items-center gap-1.5"></span>
         </div>
 
-        {{-- Konten --}}
         <div class="p-5 overflow-y-auto flex-1">
             <h3 id="modalNama" class="font-bold text-xl text-gray-800 leading-tight"></h3>
             <p id="modalRestoNama" class="text-sm text-gray-400 mt-1"></p>
@@ -475,17 +521,15 @@
             <p id="modalHarga" class="text-[#2D6A4F] font-bold text-2xl mt-4"></p>
         </div>
 
-        {{-- Aksi --}}
         <div class="p-4 border-t border-gray-100 flex-shrink-0">
             <button
                 id="btnFavoritMenu"
                 onclick="toggleFavoritMenu()"
                 class="w-full mb-2 border border-pink-400 text-pink-500 hover:bg-pink-50 py-3 rounded-2xl font-semibold transition">
-                Favorit
+                🤍 Favorit
             </button>
             <a id="modalLihatUsaha" href="#"
                class="w-full bg-[#2D6A4F] text-white text-center py-3 rounded-2xl font-semibold text-sm hover:bg-[#235c42] transition flex items-center justify-center gap-2">
-                {{-- Icon gedung kecil --}}
                 <div class="flex flex-col items-center gap-px">
                     <div class="w-4 h-0.5 bg-white rounded"></div>
                     <div class="flex gap-px">
@@ -514,8 +558,8 @@
         </div>
     </div>
     <div class="py-2">
-        <a href="{{ route('profile.index') }}"     class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition text-sm font-semibold text-gray-700">Profil Saya</a>
-        <a href="{{ route('profile.favorit') }}"   class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition text-sm font-semibold text-gray-700">Favorit</a>
+        <a href="{{ route('profile.index') }}" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition text-sm font-semibold text-gray-700">Profil Saya</a>
+        <a href="{{ route('profile.favorit') }}" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition text-sm font-semibold text-gray-700">Favorit</a>
         <a href="{{ route('profile.preferensi') }}" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition text-sm font-semibold text-gray-700">Preferensi Makanan</a>
         <a href="{{ route('profile.pengaturan') }}" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition text-sm font-semibold text-gray-700">Pengaturan</a>
     </div>
@@ -545,18 +589,24 @@
 <script>
 // ── MODAL ────────────────────────────────────────────────────
 
+window.menuFavoritAktif = null;
+window.isMenuFavorit = false;
+
 function bukaModalMenu(el) {
     const d = el.dataset;
     window.menuFavoritAktif = d.menuId;
+    
+    console.log('Menu ID:', window.menuFavoritAktif);
+    console.log('Is Favorit from dataset:', d.isFavorit);
 
-    document.getElementById('modalFoto').src              = d.foto || '';
-    document.getElementById('modalFoto').alt              = d.nama || '';
-    document.getElementById('modalNama').textContent      = d.nama || '';
+    document.getElementById('modalFoto').src = d.foto || '';
+    document.getElementById('modalFoto').alt = d.nama || '';
+    document.getElementById('modalNama').textContent = d.nama || '';
     document.getElementById('modalRestoNama').textContent = d.restoNama || '';
     document.getElementById('modalDeskripsi').textContent = d.deskripsi || 'Tidak ada deskripsi.';
-    document.getElementById('modalHarga').textContent     =
+    document.getElementById('modalHarga').textContent = 
         'Rp ' + parseInt(d.harga || 0).toLocaleString('id-ID');
-    document.getElementById('modalLihatUsaha').href       = `/restoran/${d.restoId}`;
+    document.getElementById('modalLihatUsaha').href = `/restoran/${d.restoId}`;
 
     // Jarak
     const jarakEl = document.getElementById('modalJarak');
@@ -567,29 +617,71 @@ function bukaModalMenu(el) {
         jarakEl.classList.add('hidden');
     }
 
-    // Reset tombol favorit setiap modal dibuka
-    const btnFav = document.getElementById('btnFavoritMenu');
-    btnFav.innerHTML = '♡ Favorit';
-    btnFav.className = 'w-full mb-2 border border-pink-400 text-pink-500 hover:bg-pink-50 py-3 rounded-2xl font-semibold transition';
+    // Set status favorit dari dataset
+    if (d.isFavorit === 'true') {
+        window.isMenuFavorit = true;
+        updateTombolFavorit(true);
+    } else {
+        window.isMenuFavorit = false;
+        updateTombolFavorit(false);
+        // Cek ke database untuk memastikan
+        cekStatusFavoritMenu(window.menuFavoritAktif);
+    }
 
     // Halal badge
     const badge = document.getElementById('modalHalalBadge');
-    const dot   = `<div class="w-1.5 h-1.5 rounded-full `;
+    const dot = `<div class="w-1.5 h-1.5 rounded-full `;
     if (d.halal === 'certified') {
-        badge.innerHTML   = dot + `bg-green-500"></div> Bersertifikat Halal`;
-        badge.className   = 'absolute bottom-3 left-3 text-xs px-3 py-1 rounded-full font-medium inline-flex items-center gap-1.5 bg-green-100 text-green-700';
+        badge.innerHTML = dot + `bg-green-500"></div> Bersertifikat Halal`;
+        badge.className = 'absolute bottom-3 left-3 text-xs px-3 py-1 rounded-full font-medium inline-flex items-center gap-1.5 bg-green-100 text-green-700';
     } else if (d.halal === 'self_claimed') {
-        badge.innerHTML   = dot + `bg-yellow-400"></div> Klaim Halal`;
-        badge.className   = 'absolute bottom-3 left-3 text-xs px-3 py-1 rounded-full font-medium inline-flex items-center gap-1.5 bg-yellow-100 text-yellow-700';
+        badge.innerHTML = dot + `bg-yellow-400"></div> Klaim Halal`;
+        badge.className = 'absolute bottom-3 left-3 text-xs px-3 py-1 rounded-full font-medium inline-flex items-center gap-1.5 bg-yellow-100 text-yellow-700';
     } else {
-        badge.innerHTML   = dot + `bg-gray-400"></div> Belum Terverifikasi`;
-        badge.className   = 'absolute bottom-3 left-3 text-xs px-3 py-1 rounded-full font-medium inline-flex items-center gap-1.5 bg-gray-100 text-gray-500';
+        badge.innerHTML = dot + `bg-gray-400"></div> Belum Terverifikasi`;
+        badge.className = 'absolute bottom-3 left-3 text-xs px-3 py-1 rounded-full font-medium inline-flex items-center gap-1.5 bg-gray-100 text-gray-500';
     }
 
     const modal = document.getElementById('modalMenu');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
+}
+
+function cekStatusFavoritMenu(menuId) {
+    if (!menuId) {
+        updateTombolFavorit(false);
+        return;
+    }
+
+    fetch(`/favorit/cek/${menuId}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        window.isMenuFavorit = data.favorit || false;
+        updateTombolFavorit(window.isMenuFavorit);
+    })
+    .catch(err => {
+        console.error('Error cek favorit:', err);
+        updateTombolFavorit(false);
+    });
+}
+
+function updateTombolFavorit(isFavorit) {
+    const btn = document.getElementById('btnFavoritMenu');
+    if (isFavorit) {
+        btn.innerHTML = '❤️ Favorit';
+        btn.className = 'w-full mb-2 bg-pink-100 border border-pink-400 text-pink-600 py-3 rounded-2xl font-semibold transition';
+        btn.dataset.favorit = 'true';
+    } else {
+        btn.innerHTML = '🤍 Favorit';
+        btn.className = 'w-full mb-2 border border-pink-400 text-pink-500 hover:bg-pink-50 py-3 rounded-2xl font-semibold transition';
+        btn.dataset.favorit = 'false';
+    }
 }
 
 function tutupModalMenu() {
@@ -600,35 +692,52 @@ function tutupModalMenu() {
 }
 
 function toggleFavoritMenu() {
-    if (!window.menuFavoritAktif) return;
+    if (!window.menuFavoritAktif) {
+        console.error('Tidak ada menu yang dipilih');
+        return;
+    }
+
+    const btn = document.getElementById('btnFavoritMenu');
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
 
     fetch('/favorit/toggle', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify({ id_menu: window.menuFavoritAktif })
     })
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
+        return r.json();
+    })
     .then(data => {
-        const btn = document.getElementById('btnFavoritMenu');
+        console.log('Response:', data);
         if (data.status === 'tambah') {
-            btn.innerHTML = 'Favorit';
-            btn.className = 'w-full mb-2 bg-pink-100 border border-pink-400 text-pink-600 py-3 rounded-2xl font-semibold transition';
-        } else {
-            btn.innerHTML = 'Favorit';
-            btn.className = 'w-full mb-2 border border-pink-400 text-pink-500 hover:bg-pink-50 py-3 rounded-2xl font-semibold transition';
+            window.isMenuFavorit = true;
+            updateTombolFavorit(true);
+        } else if (data.status === 'hapus') {
+            window.isMenuFavorit = false;
+            updateTombolFavorit(false);
         }
     })
     .catch(err => {
-        console.error(err);
-        alert('Gagal memperbarui favorit, coba lagi.');
+        console.error('Error:', err);
+        alert('Gagal memperbarui favorit. Silakan coba lagi.');
+        cekStatusFavoritMenu(window.menuFavoritAktif);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
     });
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') tutupModalMenu(); });
-
+document.addEventListener('keydown', e => { 
+    if (e.key === 'Escape') tutupModalMenu(); 
+});
 
 // ── GPS ──────────────────────────────────────────────────────
 
@@ -661,7 +770,6 @@ window.addEventListener('load', () => {
     }
 });
 @endif
-
 
 // ── PROFILE ──────────────────────────────────────────────────
 

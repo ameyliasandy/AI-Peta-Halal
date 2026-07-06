@@ -108,52 +108,68 @@ class ProfileController extends Controller
     public function toggleFavorit(Request $request)
     {
         $request->validate([
-            'id_restoran' => 'nullable',
-            'id_menu' => 'nullable'
+            'id_restoran' => 'nullable|exists:restoran,id_restoran',
+            'id_menu' => 'nullable|exists:menu,id_menu',
         ]);
-
 
         $user = Auth::id();
 
+        if ($request->filled('id_restoran')) {
+            $favorit = Favorit::where('user_id', $user)
+                ->where('id_restoran', $request->id_restoran)
+                ->whereNull('id_menu')
+                ->first();
 
-        $favorit = Favorit::where('user_id',$user)
-            ->where(function($q) use ($request){
+            if ($favorit) {
+                $favorit->delete();
+                return response()->json([
+                    'status'=>'hapus',
+                    'message'=>'Restoran dihapus dari favorit'
+                ]);
+            }
 
-                if($request->id_restoran){
-                    $q->where('id_restoran',$request->id_restoran);
-                }
-
-                if($request->id_menu){
-                    $q->orWhere('id_menu',$request->id_menu);
-                }
-
-            })
-            ->first();
-
-
-        if($favorit){
-
-            $favorit->delete();
-
-            return response()->json([
-                'status'=>'hapus',
-                'message'=>'Dihapus dari favorit'
+            Favorit::create([
+                'user_id'=>$user,
+                'id_restoran'=>$request->id_restoran,
+                'id_menu'=>null
             ]);
 
+            return response()->json([
+                'status'=>'tambah',
+                'message'=>'Restoran ditambahkan ke favorit'
+            ]);
         }
 
+        if ($request->filled('id_menu')) {
+            $favorit = Favorit::where('user_id', $user)
+                ->where('id_menu', $request->id_menu)
+                ->whereNull('id_restoran')
+                ->first();
 
-        Favorit::create([
-            'user_id'=>$user,
-            'id_restoran'=>$request->id_restoran,
-            'id_menu'=>$request->id_menu
-        ]);
+            if ($favorit) {
+                $favorit->delete();
+                return response()->json([
+                    'status'=>'hapus',
+                    'message'=>'Menu dihapus dari favorit'
+                ]);
+            }
 
+            Favorit::create([
+                'user_id'=>$user,
+                'id_restoran'=>null,
+                'id_menu'=>$request->id_menu
+            ]);
+
+            return response()->json([
+                'status'=>'tambah',
+                'message'=>'Menu ditambahkan ke favorit'
+            ]);
+        }
 
         return response()->json([
-            'status'=>'tambah',
-            'message'=>'Ditambahkan ke favorit'
-        ]);
+            'status'=>'error',
+            'message'=>'ID tidak valid'
+        ], 422);
     }
 
     // ───────────────────────────────────────

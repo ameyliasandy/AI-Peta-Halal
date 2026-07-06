@@ -289,7 +289,14 @@
 @endpush
 
 @section('content')
-@php $v = $restoran->verifikasiHalal; @endphp
+@php 
+  $v = $restoran->verifikasiHalal;
+  // Cek apakah restoran sudah difavoritkan
+  $isFavorit = \App\Models\Favorit::where('user_id', Auth::id())
+      ->where('id_restoran', $restoran->id_restoran)
+      ->whereNull('id_menu')
+      ->exists();
+@endphp
 
 <div class="dt-wrap">
 
@@ -410,12 +417,14 @@
 
         {{-- TOMBOL AKSI - MENGGUNAKAN TAILWIND --}}
         <div class="tacts">
-        <button 
-          id="btnFavoritRestoran"
-          onclick="toggleFavoritRestoran()"
-          class="inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-pink-400 text-pink-500 hover:bg-pink-50 font-bold text-sm rounded-lg transition-all">
-          ♡ Favorit
-        </button>
+          <button 
+            id="btnFavoritRestoran"
+            onclick="toggleFavoritRestoran()"
+            class="inline-flex items-center justify-center gap-2 px-5 py-2.5 font-bold text-sm rounded-lg transition-all {{ $isFavorit ? 'bg-red-100 hover:bg-red-200 text-red-500 border border-red-300' : 'border border-pink-400 text-pink-500 hover:bg-pink-50' }}">
+            <span id="btnFavoritIcon">{{ $isFavorit ? '❤️' : '🤍' }}</span>
+            <span id="btnFavoritText">{{ $isFavorit ? 'Favorit' : 'Favorit' }}</span>
+          </button>
+
           {{-- Tombol Hubungi --}}
           @if($restoran->no_telepon)
           <a href="tel:{{ $restoran->no_telepon }}" 
@@ -536,83 +545,6 @@
       </button>
     </form>
 
-    <script>
-    document.querySelectorAll('#starRating .star').forEach(star => {
-      star.addEventListener('click', function() {
-        const value = this.getAttribute('data-value');
-        document.getElementById('ratingInput').value = value;
-        document.querySelectorAll('#starRating .star').forEach(s => {
-          s.style.color = s.getAttribute('data-value') <= value ? '#facc15' : '#d1d5db';
-        });
-      });
-    });
-
-    function toggleFavoritRestoran() {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-      if (!csrfToken) {
-        console.error('CSRF token not found');
-        alert('Terjadi kesalahan. Silakan refresh halaman.');
-        return;
-      }
-
-      fetch('/favorit/toggle', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': csrfToken
-        },
-        body: JSON.stringify({
-          id_restoran: "{{ $restoran->id_restoran }}"
-        })
-      })
-      .then(r => r.json())
-      .then(data => {
-        let btn = document.getElementById('btnFavoritRestoran');
-        if (data.status == "tambah") {
-          btn.innerHTML = "♥ Favorit";
-          btn.className = "px-5 py-2.5 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg font-bold text-sm transition";
-        } else {
-          btn.innerHTML = "♡ Favorit";
-          btn.className = "px-5 py-2.5 bg-pink-200 hover:bg-pink-300 text-pink-600 rounded-lg font-bold text-sm transition";
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan. Silakan coba lagi.');
-      });
-    }
-
-    // ── Menu Modal ──
-    function openMenuModal() {
-      document.getElementById('menuModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeMenuModal() {
-      document.getElementById('menuModal').classList.remove('active');
-      document.body.style.overflow = '';
-    }
-
-    // Close modal on overlay click
-    document.addEventListener('DOMContentLoaded', function() {
-      const modal = document.getElementById('menuModal');
-      if (modal) {
-        modal.addEventListener('click', function(e) {
-          if (e.target === this) {
-            closeMenuModal();
-          }
-        });
-      }
-    });
-
-    // Close modal with ESC key
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        closeMenuModal();
-      }
-    });
-    </script>
-
     @else
     <p style="font-size:13px;color:var(--s6)">
       <a href="{{ route('login') }}" style="color:var(--g);font-weight:600">Login</a> untuk memberi ulasan dan rating.
@@ -693,5 +625,98 @@
     @endif
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // ── Star Rating ──
+  document.querySelectorAll('#starRating .star').forEach(star => {
+    star.addEventListener('click', function() {
+      const value = this.getAttribute('data-value');
+      document.getElementById('ratingInput').value = value;
+      document.querySelectorAll('#starRating .star').forEach(s => {
+        s.style.color = s.getAttribute('data-value') <= value ? '#facc15' : '#d1d5db';
+      });
+    });
+  });
+
+  // ── Menu Modal ──
+  const modal = document.getElementById('menuModal');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeMenuModal();
+      }
+    });
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeMenuModal();
+    }
+  });
+});
+
+// ── Toggle Favorit Restoran ──
+function toggleFavoritRestoran() {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+  if (!csrfToken) {
+    console.error('CSRF token not found');
+    alert('Terjadi kesalahan. Silakan refresh halaman.');
+    return;
+  }
+
+  const btn = document.getElementById('btnFavoritRestoran');
+  const icon = document.getElementById('btnFavoritIcon');
+  const text = document.getElementById('btnFavoritText');
+  
+  // Disable tombol sementara
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+
+  fetch('/favorit/toggle', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': csrfToken
+    },
+    body: JSON.stringify({
+      id_restoran: "{{ $restoran->id_restoran }}"
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.status === "tambah") {
+      // Status favorit aktif
+      icon.textContent = '❤️';
+      btn.className = 'inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-red-100 hover:bg-red-200 text-red-500 border border-red-300 font-bold text-sm rounded-lg transition-all';
+    } else {
+      // Status favorit nonaktif
+      icon.textContent = '🤍';
+      btn.className = 'inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-pink-400 text-pink-500 hover:bg-pink-50 font-bold text-sm rounded-lg transition-all';
+    }
+    text.textContent = 'Favorit';
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Terjadi kesalahan. Silakan coba lagi.');
+  })
+  .finally(() => {
+    // Enable tombol kembali
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  });
+}
+
+// ── Menu Modal Functions ──
+function openMenuModal() {
+  document.getElementById('menuModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMenuModal() {
+  document.getElementById('menuModal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+</script>
 
 @endsection
