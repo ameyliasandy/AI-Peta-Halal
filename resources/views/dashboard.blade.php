@@ -99,7 +99,7 @@
             <div onclick="bukaModalMenu(this)"
                  data-nama="{{ $menu->nama_menu }}"
                  data-menu-id="{{ $menu->id_menu }}"
-                 data-foto="{{ $menu->foto_menu ?? ImageHelper::restoran($menu->restoran->nama_restoran ?? 'default') }}"
+                 data-foto="{{ $menu->foto_menu ? asset('storage/'.$menu->foto_menu) : ImageHelper::restoran($menu->restoran->nama_restoran ?? 'default') }}"
                  data-deskripsi="{{ $menu->deskripsi ?? '' }}"
                  data-harga="{{ $menu->harga }}"
                  data-resto-nama="{{ $menu->restoran->nama_restoran ?? '' }}"
@@ -109,7 +109,7 @@
                  data-is-favorit="{{ $isFavoritMenu ? 'true' : 'false' }}"
                  class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer group">
                 <div class="h-28 bg-gray-100 overflow-hidden relative">
-                    <img src="{{ $menu->foto_menu ?? ImageHelper::restoran($menu->restoran->nama_restoran ?? 'default') }}"
+                    <img src="{{ $menu->foto_menu ? asset('storage/'.$menu->foto_menu) : ImageHelper::restoran($menu->restoran->nama_restoran) }}">
                          class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                          alt="{{ $menu->nama_menu }}">
                     @if($isFavoritMenu)
@@ -260,7 +260,7 @@
             <div onclick="bukaModalMenu(this)"
                  data-nama="{{ $rekomendasiAI->nama_menu }}"
                  data-menu-id="{{ $rekomendasiAI->id_menu }}"
-                 data-foto="{{ $rekomendasiAI->foto_menu ?? ImageHelper::restoran($restoAI->nama_restoran ?? 'default') }}"
+                 data-foto="{{ $rekomendasiAI->foto_menu ? asset('storage/'.$rekomendasiAI->foto_menu) : ImageHelper::restoran($restoAI->nama_restoran ?? 'default') }}"
                  data-deskripsi="{{ $rekomendasiAI->deskripsi ?? '' }}"
                  data-harga="{{ $rekomendasiAI->harga }}"
                  data-resto-nama="{{ $restoAI->nama_restoran ?? '' }}"
@@ -311,7 +311,7 @@
                 <div onclick="bukaModalMenu(this)"
                      data-nama="{{ $menu->nama_menu }}"
                      data-menu-id="{{ $menu->id_menu }}"
-                     data-foto="{{ $menu->foto_menu ?? ImageHelper::restoran($menu->restoran->nama_restoran ?? 'default') }}"
+                     data-foto="{{ $menu->foto_menu ? asset('storage/'.$menu->foto_menu) : ImageHelper::restoran($menu->restoran->nama_restoran ?? 'default') }}"
                      data-deskripsi="{{ $menu->deskripsi ?? '' }}"
                      data-harga="{{ $menu->harga }}"
                      data-resto-nama="{{ $menu->restoran->nama_restoran ?? '' }}"
