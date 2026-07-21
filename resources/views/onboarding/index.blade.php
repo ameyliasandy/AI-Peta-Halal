@@ -1,9 +1,11 @@
-@if($showOnboarding ?? false)
-<div id="onboardingModal" class="fixed inset-0 z-[100] flex justify-center items-center p-4">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+@extends('layouts.app')
 
-    <div class="relative bg-gray-100 p-6 rounded-3xl w-full max-w-md z-10 max-h-[90vh] overflow-y-auto">
-        <!-- Badge -->
+@section('title', 'Pilih Preferensi - Petha')
+@section('content')
+
+<div class="min-h-screen bg-[#2D6A4F] flex items-center justify-center p-4">
+    <div class="bg-gray-100 p-6 rounded-3xl w-full max-w-md">
+
         <span class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">
             Preferensi Awal
         </span>
@@ -13,10 +15,10 @@
         </h2>
 
         <p class="text-sm text-gray-500 mb-3">
-            Rekomendasi akan menyesuaikan pilihanmu
+            Rekomendasi akan menyesuaikan pilihanmu. Langkah ini wajib diisi sebelum
+            melanjutkan ke dashboard.
         </p>
 
-        <!-- Counter -->
         <p id="counter" class="text-sm text-green-600 mb-4">
             0/3 dipilih
         </p>
@@ -29,7 +31,7 @@
             @foreach($kategori as $item)
             <button type="button"
                 onclick="toggle(this)"
-                class="kategori px-3 py-2 border rounded-full text-sm text-gray-700">
+                class="kategori px-3 py-2 border rounded-full text-sm text-gray-700 transition">
                 {{ $item }}
             </button>
             @endforeach
@@ -37,17 +39,14 @@
 
         <div id="hidden-inputs"></div>
 
-        <div class="flex gap-2">
-            <button type="button" onclick="skipOnboarding()"
-                class="flex-1 bg-white border border-gray-300 text-gray-500 py-2 rounded-full text-sm font-semibold hover:bg-gray-50 transition">
-                Lewati
-            </button>
+        <button id="submitBtn" type="button" onclick="submitOnboarding()"
+            class="w-full bg-gray-300 text-white py-3 rounded-full cursor-not-allowed text-sm font-semibold transition" disabled>
+            Lanjutkan ke Dashboard
+        </button>
 
-            <button id="submitBtn" type="button" onclick="submitOnboarding()"
-                class="flex-1 bg-gray-300 text-white py-2 rounded-full cursor-not-allowed text-sm font-semibold transition" disabled>
-                Lanjutkan
-            </button>
-        </div>
+        <p id="errorMsg" class="text-red-500 text-xs mt-2 hidden">
+            Gagal menyimpan preferensi, coba lagi.
+        </p>
     </div>
 </div>
 
@@ -91,14 +90,12 @@ function toggle(el){
 
 function submitOnboarding(){
     if(selected.length !== 3) return;
-    kirimOnboarding({ kategori: selected });
-}
 
-function skipOnboarding(){
-    kirimOnboarding({ skip: 1 });
-}
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerText = 'Menyimpan...';
+    document.getElementById('errorMsg').classList.add('hidden');
 
-function kirimOnboarding(payload){
     fetch('/onboarding', {
         method: 'POST',
         headers: {
@@ -106,13 +103,20 @@ function kirimOnboarding(payload){
             'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ kategori: selected })
     })
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) throw new Error('Gagal');
+        return r.json();
+    })
     .then(() => {
-        document.getElementById('onboardingModal').remove();
+        window.location.href = '/dashboard';
     })
-    .catch(() => alert('Gagal menyimpan, coba lagi.'));
+    .catch(() => {
+        document.getElementById('errorMsg').classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerText = 'Lanjutkan ke Dashboard';
+    });
 }
 </script>
-@endif
+@endsection

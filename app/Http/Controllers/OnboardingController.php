@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\DB;
 
 class OnboardingController extends Controller
 {
-    // Dipakai kalau ada yang buka /onboarding langsung (fallback, jarang dipakai lagi
-    // karena sekarang tampil sebagai modal di guest/dashboard)
     public function index()
     {
         if (Auth::check()) {
@@ -17,7 +15,8 @@ class OnboardingController extends Controller
                 ->where('user_id', Auth::id())
                 ->exists();
 
-            if ($sudahOnboarding) return redirect('/');
+            // Kalau sudah pernah isi, tidak perlu isi lagi — balik ke dashboard
+            if ($sudahOnboarding) return redirect()->route('dashboard');
         } elseif (session()->has('guest_preferensi')) {
             return redirect('/');
         }
@@ -27,33 +26,7 @@ class OnboardingController extends Controller
 
     public function store(Request $request)
     {
-        // ─── SKIP ───────────────────────────────────────────
-        if ($request->boolean('skip')) {
-            if (Auth::check()) {
-                $user = Auth::user();
-
-                DB::table('preferensi_users')->where('user_id', $user->id)->delete();
-
-                // simpan penanda "sudah ditanya tapi skip" biar tidak muncul
-                // lagi tiap kali dashboard di-load, sesuai kesepakatan
-                // "pencari cuma ditanya sekali".
-                DB::table('preferensi_users')->insert([
-                    'user_id'    => $user->id,
-                    'kategori'   => 'skip',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            } else {
-                // guest: tandai sesi ini sudah "ditanya" tapi kosong
-                session(['guest_preferensi' => []]);
-            }
-
-            return $request->wantsJson()
-                ? response()->json(['status' => 'skipped'])
-                : redirect('/');
-        }
-
-        // ─── SUBMIT NORMAL ──────────────────────────────────
+        // Wajib pilih tepat 3 kategori — tidak ada lagi opsi "skip"
         $request->validate([
             'kategori' => 'required|array|size:3'
         ]);
@@ -77,6 +50,6 @@ class OnboardingController extends Controller
 
         return $request->wantsJson()
             ? response()->json(['status' => 'saved'])
-            : redirect('/');
+            : redirect()->route('dashboard');
     }
 }

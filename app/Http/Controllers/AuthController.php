@@ -74,17 +74,15 @@ class AuthController extends Controller
                 return redirect('/pemilik/dashboard');
             }
 
-            // 🔥 CEK ONBOARDING USER
+            // 🔥 CEK ONBOARDING — wajib isi dulu sebelum ke dashboard
             $sudahOnboarding = DB::table('preferensi_users')
                 ->where('user_id', $user->id)
                 ->exists();
 
-            // BELUM onboarding
             if (!$sudahOnboarding) {
                 return redirect('/onboarding');
             }
 
-            // SUDAH onboarding
             return redirect()->route('dashboard');
         }
 

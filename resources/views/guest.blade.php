@@ -86,11 +86,14 @@
         @else
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             @foreach($menuResults as $menu)
-            @php $st = $menu->restoran->status_halal ?? 'none'; @endphp
+            @php
+                $st = $menu->restoran->status_halal ?? 'none';
+                $fotoMenu = $menu->foto_menu ?? ImageHelper::menu($menu->nama_menu, $menu->restoran->nama_restoran ?? 'default', $menu->deskripsi);
+            @endphp
             <div onclick="bukaModalMenu(this)"
                  data-nama="{{ $menu->nama_menu }}"
                  data-menu-id="{{ $menu->id_menu }}"
-                 data-foto="{{ $menu->foto_menu ?? ImageHelper::restoran($menu->restoran->nama_restoran ?? 'default') }}"
+                 data-foto="{{ $fotoMenu }}"
                  data-deskripsi="{{ $menu->deskripsi ?? '' }}"
                  data-harga="{{ $menu->harga }}"
                  data-resto-nama="{{ $menu->restoran->nama_restoran ?? '' }}"
@@ -99,7 +102,7 @@
                  data-jarak="{{ $menu->jarak_km ?? '' }}"
                  class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer group">
                 <div class="h-28 bg-gray-100 overflow-hidden">
-                    <img src="{{ $menu->foto_menu ?? ImageHelper::restoran($menu->restoran->nama_restoran ?? 'default') }}"
+                    <img src="{{ $fotoMenu }}"
                          class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                          alt="{{ $menu->nama_menu }}">
                 </div>
@@ -219,11 +222,14 @@
 
             <div class="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
                 @foreach($populer as $menu)
-                @php $stm = $menu->restoran->status_halal ?? 'none'; @endphp
+                @php
+                    $stm = $menu->restoran->status_halal ?? 'none';
+                    $fotoPop = $menu->foto_menu ?? ImageHelper::menu($menu->nama_menu, $menu->restoran->nama_restoran ?? 'default', $menu->deskripsi);
+                @endphp
                 <div onclick="bukaModalMenu(this)"
                      data-nama="{{ $menu->nama_menu }}"
                      data-menu-id="{{ $menu->id_menu }}"
-                     data-foto="{{ $menu->foto_menu ?? ImageHelper::restoran($menu->restoran->nama_restoran ?? 'default') }}"
+                     data-foto="{{ $fotoPop }}"
                      data-deskripsi="{{ $menu->deskripsi ?? '' }}"
                      data-harga="{{ $menu->harga }}"
                      data-resto-nama="{{ $menu->restoran->nama_restoran ?? '' }}"
@@ -232,7 +238,7 @@
                      data-jarak="{{ $menu->jarak_km ?? '' }}"
                      class="bg-white rounded-2xl overflow-hidden shadow-sm shrink-0 w-40 cursor-pointer hover:shadow-md transition group">
                     <div class="h-24 bg-gray-100 overflow-hidden">
-                        <img src="{{ $menu->foto_menu ?? ImageHelper::restoran($menu->restoran->nama_restoran ?? 'default') }}"
+                        <img src="{{ $fotoPop }}"
                              class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                              alt="{{ $menu->nama_menu }}">
                     </div>
@@ -310,7 +316,7 @@
     </div>
 
     {{-- Kolom Kanan Desktop — Terdekat --}}
-    <div class="mt-6">
+    <div class="hidden lg:block mt-6">
         <div class="flex justify-between items-center mb-3">
             <h2 class="font-bold text-gray-800">Terdekat darimu</h2>
             @if(!$hasLokasi)
@@ -562,7 +568,4 @@ window.addEventListener('load', () => {
 });
 @endif
 </script>
-
-@include('onboarding.index')
-
 @endsection

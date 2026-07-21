@@ -95,11 +95,12 @@
             @php 
                 $st = $menu->restoran->status_halal ?? 'none';
                 $isFavoritMenu = in_array($menu->id_menu, $favoritMenuIds ?? []);
+                $fotoMenu = $menu->foto_menu ? asset('storage/'.$menu->foto_menu) : ImageHelper::menu($menu->nama_menu, $menu->restoran->nama_restoran ?? 'default', $menu->deskripsi);
             @endphp
             <div onclick="bukaModalMenu(this)"
                  data-nama="{{ $menu->nama_menu }}"
                  data-menu-id="{{ $menu->id_menu }}"
-                 data-foto="{{ $menu->foto_menu ? asset('storage/'.$menu->foto_menu) : ImageHelper::restoran($menu->restoran->nama_restoran ?? 'default') }}"
+                 data-foto="{{ $fotoMenu }}"
                  data-deskripsi="{{ $menu->deskripsi ?? '' }}"
                  data-harga="{{ $menu->harga }}"
                  data-resto-nama="{{ $menu->restoran->nama_restoran ?? '' }}"
@@ -109,7 +110,7 @@
                  data-is-favorit="{{ $isFavoritMenu ? 'true' : 'false' }}"
                  class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer group">
                 <div class="h-28 bg-gray-100 overflow-hidden relative">
-                    <img src="{{ $menu->foto_menu ? asset('storage/'.$menu->foto_menu) : ImageHelper::restoran($menu->restoran->nama_restoran) }}">
+                    <img src="{{ $fotoMenu }}"
                          class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                          alt="{{ $menu->nama_menu }}">
                     @if($isFavoritMenu)
@@ -242,13 +243,8 @@
 
     <div class="space-y-6">
 
-        {{-- Rekomendasi AI --}}
-        @if($rekomendasiAI)
-        @php 
-            $restoAI = $rekomendasiAI->restoran; 
-            $stAI = $restoAI->status_halal ?? 'none';
-            $isFavAI = in_array($rekomendasiAI->id_menu, $favoritMenuIds ?? []);
-        @endphp
+        {{-- Rekomendasi AI — Hybrid (CF + CBF + Trend) --}}
+        @if($rekomendasiAI && $rekomendasiAI->count() > 0)
         <div>
             <div class="flex justify-between items-center mb-3">
                 <h2 class="font-bold text-gray-800">Rekomendasi untukmu</h2>
@@ -257,40 +253,70 @@
                     AI Hybrid
                 </span>
             </div>
-            <div onclick="bukaModalMenu(this)"
-                 data-nama="{{ $rekomendasiAI->nama_menu }}"
-                 data-menu-id="{{ $rekomendasiAI->id_menu }}"
-                 data-foto="{{ $rekomendasiAI->foto_menu ? asset('storage/'.$rekomendasiAI->foto_menu) : ImageHelper::restoran($restoAI->nama_restoran ?? 'default') }}"
-                 data-deskripsi="{{ $rekomendasiAI->deskripsi ?? '' }}"
-                 data-harga="{{ $rekomendasiAI->harga }}"
-                 data-resto-nama="{{ $restoAI->nama_restoran ?? '' }}"
-                 data-resto-id="{{ $rekomendasiAI->id_restoran }}"
-                 data-halal="{{ $stAI }}"
-                 data-jarak="{{ $restoAI->jarak_km ?? '' }}"
-                 data-is-favorit="{{ $isFavAI ? 'true' : 'false' }}"
-                 class="bg-white rounded-2xl overflow-hidden shadow-sm cursor-pointer group hover:shadow-md transition">
-                <div class="h-44 md:h-64 bg-gray-200 relative overflow-hidden">
-                    <img src="{{ $rekomendasiAI->foto_menu ?? ImageHelper::restoran($restoAI->nama_restoran ?? 'default') }}"
-                         class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                         alt="{{ $rekomendasiAI->nama_menu }}">
-                    <span class="absolute bottom-3 left-3 inline-flex items-center gap-1.5 bg-white/90 text-xs px-3 py-1.5 rounded-full font-medium shadow-sm
-                        {{ $stAI === 'certified' ? 'text-green-700' : ($stAI === 'self_claimed' ? 'text-yellow-700' : 'text-gray-600') }}">
-                        <div class="w-1.5 h-1.5 rounded-full {{ $stAI === 'certified' ? 'bg-green-500' : ($stAI === 'self_claimed' ? 'bg-yellow-400' : 'bg-gray-400') }}"></div>
-                        {{ $stAI === 'certified' ? 'Bersertifikat Halal' : ($stAI === 'self_claimed' ? 'Klaim Halal' : 'Belum Terverifikasi') }}
-                        @if(isset($rekomendasiAI->ai_score))
-                        <span class="ml-1 text-[#2D6A4F] font-bold">{{ round($rekomendasiAI->ai_score * 100) }}% match</span>
+            <div class="flex gap-4 overflow-x-auto pb-2 no-scrollbar snap-x snap-mandatory">
+                @foreach($rekomendasiAI as $menu)
+                @php
+                    $restoAI = $menu->restoran;
+                    $stAI = $restoAI->status_halal ?? 'none';
+                    $isFavAI = in_array($menu->id_menu, $favoritMenuIds ?? []);
+                    $matchPercent = isset($menu->ai_score) ? round($menu->ai_score * 100) : null;
+                    $fotoAI = $menu->foto_menu ? asset('storage/'.$menu->foto_menu) : ImageHelper::menu($menu->nama_menu, $restoAI->nama_restoran ?? 'default', $menu->deskripsi);
+                @endphp
+                <div onclick="bukaModalMenu(this)"
+                     data-nama="{{ $menu->nama_menu }}"
+                     data-menu-id="{{ $menu->id_menu }}"
+                     data-foto="{{ $fotoAI }}"
+                     data-deskripsi="{{ $menu->deskripsi ?? '' }}"
+                     data-harga="{{ $menu->harga }}"
+                     data-resto-nama="{{ $restoAI->nama_restoran ?? '' }}"
+                     data-resto-id="{{ $menu->id_restoran }}"
+                     data-halal="{{ $stAI }}"
+                     data-jarak="{{ $restoAI->jarak_km ?? '' }}"
+                     data-is-favorit="{{ $isFavAI ? 'true' : 'false' }}"
+                     class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer group shrink-0 w-64 snap-start">
+                    <div class="h-36 bg-gray-200 relative overflow-hidden">
+                        <img src="{{ $fotoAI }}"
+                             class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                             alt="{{ $menu->nama_menu }}">
+
+                        @if($matchPercent !== null)
+                        <span class="absolute top-2 left-2 bg-[#2D6A4F] text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
+                            {{ $matchPercent }}% Match
+                        </span>
                         @endif
-                    </span>
-                    @if($isFavAI)
-                    <div class="absolute top-3 right-3 text-2xl bg-white/80 rounded-full w-10 h-10 flex items-center justify-center">❤️</div>
-                    @endif
+
+                        @if($isFavAI)
+                        <div class="absolute top-2 right-2 text-lg bg-white/80 rounded-full w-8 h-8 flex items-center justify-center">❤️</div>
+                        @endif
+
+                        <span class="absolute bottom-2 left-2 inline-flex items-center gap-1.5 bg-white/90 text-xs px-2.5 py-1 rounded-full font-medium shadow-sm
+                            {{ $stAI === 'certified' ? 'text-green-700' : ($stAI === 'self_claimed' ? 'text-yellow-700' : 'text-gray-600') }}">
+                            <div class="w-1.5 h-1.5 rounded-full {{ $stAI === 'certified' ? 'bg-green-500' : ($stAI === 'self_claimed' ? 'bg-yellow-400' : 'bg-gray-400') }}"></div>
+                            {{ $stAI === 'certified' ? 'Bersertifikat' : ($stAI === 'self_claimed' ? 'Klaim Halal' : 'Belum Terverifikasi') }}
+                        </span>
+                    </div>
+                    <div class="p-3.5">
+                        <h3 class="font-bold text-sm text-gray-800 leading-tight line-clamp-1">{{ $menu->nama_menu }}</h3>
+                        <p class="text-xs text-gray-400 mt-0.5 truncate">{{ $restoAI->nama_restoran ?? '' }}</p>
+                        <p class="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">{{ $menu->deskripsi }}</p>
+                        <p class="text-[#2D6A4F] font-bold text-base mt-2">Rp {{ number_format($menu->harga, 0, ',', '.') }}</p>
+
+                        @if(!empty($menu->alasan_rekomendasi))
+                        <div class="mt-2.5 pt-2.5 border-t border-gray-100">
+                            <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-1">Direkomendasikan karena</p>
+                            <ul class="space-y-0.5">
+                                @foreach($menu->alasan_rekomendasi as $alasan)
+                                <li class="text-[11px] text-gray-500 flex items-start gap-1.5 leading-snug">
+                                    <span class="text-[#2D6A4F] mt-0.5">●</span>
+                                    <span>{{ $alasan }}</span>
+                                </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        @endif
+                    </div>
                 </div>
-                <div class="p-4">
-                    <h3 class="font-bold text-lg text-gray-800">{{ $rekomendasiAI->nama_menu }}</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">{{ $restoAI->nama_restoran ?? '' }}</p>
-                    <p class="text-xs text-gray-500 mt-2 line-clamp-2 leading-relaxed">{{ $rekomendasiAI->deskripsi }}</p>
-                    <p class="text-[#2D6A4F] font-bold text-xl mt-3">Rp {{ number_format($rekomendasiAI->harga, 0, ',', '.') }}</p>
-                </div>
+                @endforeach
             </div>
         </div>
         @endif
@@ -307,11 +333,12 @@
                 @php 
                     $stm = $menu->restoran->status_halal ?? 'none';
                     $isFavPop = in_array($menu->id_menu, $favoritMenuIds ?? []);
+                    $fotoPop = $menu->foto_menu ? asset('storage/'.$menu->foto_menu) : ImageHelper::menu($menu->nama_menu, $menu->restoran->nama_restoran ?? 'default', $menu->deskripsi);
                 @endphp
                 <div onclick="bukaModalMenu(this)"
                      data-nama="{{ $menu->nama_menu }}"
                      data-menu-id="{{ $menu->id_menu }}"
-                     data-foto="{{ $menu->foto_menu ? asset('storage/'.$menu->foto_menu) : ImageHelper::restoran($menu->restoran->nama_restoran ?? 'default') }}"
+                     data-foto="{{ $fotoPop }}"
                      data-deskripsi="{{ $menu->deskripsi ?? '' }}"
                      data-harga="{{ $menu->harga }}"
                      data-resto-nama="{{ $menu->restoran->nama_restoran ?? '' }}"
@@ -321,7 +348,7 @@
                      data-is-favorit="{{ $isFavPop ? 'true' : 'false' }}"
                      class="bg-white rounded-2xl overflow-hidden shadow-sm shrink-0 w-40 cursor-pointer hover:shadow-md transition group">
                     <div class="h-24 bg-gray-100 overflow-hidden relative">
-                        <img src="{{ $menu->foto_menu ?? ImageHelper::restoran($menu->restoran->nama_restoran ?? 'default') }}"
+                        <img src="{{ $fotoPop }}"
                              class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                              alt="{{ $menu->nama_menu }}">
                         @if($isFavPop)
@@ -402,6 +429,7 @@
     </div>
 
     {{-- Kolom Kanan Desktop — Terdekat --}}
+    <div class="hidden lg:block">
     <div>
         <div class="flex justify-between items-center mb-3">
             <h2 class="font-bold text-gray-800">Terdekat darimu</h2>
@@ -778,5 +806,4 @@ function toggleProfile() {
     document.getElementById('profileOverlay').classList.toggle('hidden');
 }
 </script>
-@include('onboarding.index')
 @endsection
