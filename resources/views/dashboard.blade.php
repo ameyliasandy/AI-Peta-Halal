@@ -176,11 +176,12 @@
             @php 
                 $st = $resto->status_halal;
                 $isFavoritResto = in_array($resto->id_restoran, $favoritRestoranIds ?? []);
+                $fotoResto = $resto->foto_utama ? asset('storage/'.$resto->foto_utama) : ImageHelper::restoran($resto->nama_restoran);
             @endphp
             <a href="{{ route('restoran.show', $resto->id_restoran) }}"
                class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition block group">
                 <div class="h-28 bg-gray-100 overflow-hidden relative">
-                    <img src="{{ ImageHelper::restoran($resto->nama_restoran) }}"
+                    <img src="{{ $fotoResto }}"
                          class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                          alt="{{ $resto->nama_restoran }}">
                     @if($isFavoritResto)
@@ -390,11 +391,12 @@
                 @php 
                     $str = $resto->status_halal ?? 'none';
                     $isFavTer = in_array($resto->id_restoran, $favoritRestoranIds ?? []);
+                    $fotoTerMobile = $resto->foto_utama ? asset('storage/'.$resto->foto_utama) : ImageHelper::restoran($resto->nama_restoran);
                 @endphp
                 <a href="{{ route('restoran.show', $resto->id_restoran) }}"
                    class="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition block relative">
                     <div class="w-10 h-10 bg-gray-100 rounded-xl flex-shrink-0 overflow-hidden relative">
-                        <img src="{{ ImageHelper::restoran($resto->nama_restoran) }}"
+                        <img src="{{ $fotoTerMobile }}"
                              class="w-full h-full object-cover" alt="{{ $resto->nama_restoran }}">
                         @if($isFavTer)
                         <div class="absolute top-0 right-0 text-xs">❤️</div>
@@ -430,7 +432,6 @@
 
     {{-- Kolom Kanan Desktop — Terdekat --}}
     <div class="hidden lg:block">
-    <div>
         <div class="flex justify-between items-center mb-3">
             <h2 class="font-bold text-gray-800">Terdekat darimu</h2>
             @if(!$hasLokasi)
@@ -473,11 +474,12 @@
             @php 
                 $str = $resto->status_halal ?? 'none';
                 $isFavTer = in_array($resto->id_restoran, $favoritRestoranIds ?? []);
+                $fotoTerDesktop = $resto->foto_utama ? asset('storage/'.$resto->foto_utama) : ImageHelper::restoran($resto->nama_restoran);
             @endphp
             <a href="{{ route('restoran.show', $resto->id_restoran) }}"
                class="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition block group relative">
                 <div class="w-12 h-12 bg-gray-100 rounded-xl flex-shrink-0 overflow-hidden relative">
-                    <img src="{{ ImageHelper::restoran($resto->nama_restoran) }}"
+                    <img src="{{ $fotoTerDesktop }}"
                          class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                          alt="{{ $resto->nama_restoran }}">
                     @if($isFavTer)

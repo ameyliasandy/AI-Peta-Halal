@@ -88,7 +88,7 @@
             @foreach($menuResults as $menu)
             @php
                 $st = $menu->restoran->status_halal ?? 'none';
-                $fotoMenu = $menu->foto_menu ?? ImageHelper::menu($menu->nama_menu, $menu->restoran->nama_restoran ?? 'default', $menu->deskripsi);
+                $fotoMenu = $menu->foto_menu ? asset('storage/'.$menu->foto_menu) : ImageHelper::menu($menu->nama_menu, $menu->restoran->nama_restoran ?? 'default', $menu->deskripsi);
             @endphp
             <div onclick="bukaModalMenu(this)"
                  data-nama="{{ $menu->nama_menu }}"
@@ -153,11 +153,14 @@
         @else
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             @foreach($restorans as $resto)
-            @php $st = $resto->status_halal; @endphp
+            @php
+                $st = $resto->status_halal;
+                $fotoResto = $resto->foto_utama ? asset('storage/'.$resto->foto_utama) : ImageHelper::restoran($resto->nama_restoran);
+            @endphp
             <a href="{{ route('restoran.show', $resto->id_restoran) }}"
                class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition block group">
                 <div class="h-28 bg-gray-100 overflow-hidden">
-                    <img src="{{ ImageHelper::restoran($resto->nama_restoran) }}"
+                    <img src="{{ $fotoResto }}"
                          class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                          alt="{{ $resto->nama_restoran }}">
                 </div>
@@ -224,7 +227,7 @@
                 @foreach($populer as $menu)
                 @php
                     $stm = $menu->restoran->status_halal ?? 'none';
-                    $fotoPop = $menu->foto_menu ?? ImageHelper::menu($menu->nama_menu, $menu->restoran->nama_restoran ?? 'default', $menu->deskripsi);
+                    $fotoPop = $menu->foto_menu ? asset('storage/'.$menu->foto_menu) : ImageHelper::menu($menu->nama_menu, $menu->restoran->nama_restoran ?? 'default', $menu->deskripsi);
                 @endphp
                 <div onclick="bukaModalMenu(this)"
                      data-nama="{{ $menu->nama_menu }}"
@@ -280,11 +283,14 @@
             </div>
             <div class="space-y-3">
                 @foreach($terdekat as $resto)
-                @php $str = $resto->status_halal ?? 'none'; @endphp
+                @php
+                    $str = $resto->status_halal ?? 'none';
+                    $fotoTerMobile = $resto->foto_utama ? asset('storage/'.$resto->foto_utama) : ImageHelper::restoran($resto->nama_restoran);
+                @endphp
                 <a href="{{ route('restoran.show', $resto->id_restoran) }}"
                    class="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition block">
                     <div class="w-10 h-10 bg-gray-100 rounded-xl flex-shrink-0 overflow-hidden">
-                        <img src="{{ ImageHelper::restoran($resto->nama_restoran) }}"
+                        <img src="{{ $fotoTerMobile }}"
                              class="w-full h-full object-cover" alt="{{ $resto->nama_restoran }}">
                     </div>
                     <div class="flex-1 min-w-0">
@@ -356,11 +362,14 @@
 
         <div class="space-y-3">
             @foreach($terdekat as $resto)
-            @php $str = $resto->status_halal ?? 'none'; @endphp
+            @php
+                $str = $resto->status_halal ?? 'none';
+                $fotoTerDesktop = $resto->foto_utama ? asset('storage/'.$resto->foto_utama) : ImageHelper::restoran($resto->nama_restoran);
+            @endphp
             <a href="{{ route('restoran.show', $resto->id_restoran) }}"
                class="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition block group">
                 <div class="w-12 h-12 bg-gray-100 rounded-xl flex-shrink-0 overflow-hidden">
-                    <img src="{{ ImageHelper::restoran($resto->nama_restoran) }}"
+                    <img src="{{ $fotoTerDesktop }}"
                          class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                          alt="{{ $resto->nama_restoran }}">
                 </div>
