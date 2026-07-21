@@ -27,7 +27,10 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
-
+    'ai' => [
+    'url' => env('AI_API_URL', 'http://127.0.0.1:8001'),
+    
+    ],
     'topsis' => [
     'url' => env('TOPSIS_API_URL', 'http://127.0.0.1:5001'),
     ],

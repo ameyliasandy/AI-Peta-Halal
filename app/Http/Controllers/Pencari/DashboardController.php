@@ -343,8 +343,9 @@ class DashboardController extends Controller
             $riwayatPencarian = $this->getRiwayatPencarianUser($userId);
 
             // 1) Ambil kandidat dari Hybrid Recommendation
+            $aiUrl = config('services.ai.url', 'http://127.0.0.1:8001');
             $response = Http::timeout(5)
-                ->get("http://127.0.0.1:8001/rekomendasi/{$userId}", ['n' => 15]);
+                ->get("{$aiUrl}/rekomendasi/{$userId}", ['n' => 15]);
             $data = $response->json();
 
             if (empty($data['rekomendasi'])) {
