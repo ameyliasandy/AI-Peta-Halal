@@ -434,6 +434,50 @@ class RestoranController extends Controller
         }
     }
 
+// ─── UPDATE STATUS VERIFIKASI SAJA (Admin) ──────────────
+public function updateStatusVerifikasi(Request $request, $id)
+{
+    try {
+        $request->validate([
+            'status_verifikasi' => 'required|in:pending,terverifikasi,ditolak',
+            'catatan'           => 'nullable|string',
+        ]);
+
+        $verif = VerifikasiHalal::where('id_restoran', $id)
+                    ->latest('id_verifikasi')->first();
+
+        if (!$verif) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data verifikasi tidak ditemukan.'
+            ], 404);
+        }
+
+        $verif->status   = $request->status_verifikasi;
+        $verif->catatan  = $request->catatan;
+        $verif->id_admin = auth()->id();
+
+        if ($request->status_verifikasi === 'terverifikasi') {
+            $verif->tanggal_verifikasi = now()->toDateString();
+        }
+
+        $verif->save();
+
+        return response()->json(['success' => true, 'message' => 'Status verifikasi berhasil diperbarui']);
+
+    } catch (ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => collect($e->errors())->flatten()->first()
+        ], 422);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan saat memperbarui status verifikasi.'
+        ], 500);
+    }
+}
+
     // ─── DESTROY ────────────────────────────────────────────
     public function destroy($id)
     {

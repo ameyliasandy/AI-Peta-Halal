@@ -57,6 +57,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/restoran/{id}',                                [RestoranController::class, 'show'])->name('restoran.show');
     Route::get('/restoran/{id}/data',                           [RestoranController::class, 'editData'])->name('restoran.data');
     Route::post('/restoran/{id}/update',                        [RestoranController::class, 'update'])->name('restoran.update');
+    Route::post('/restoran/{id}/verifikasi', [RestoranController::class, 'updateStatusVerifikasi']);
     Route::delete('/restoran/{id}',                             [RestoranController::class, 'destroy'])->name('restoran.destroy');
     Route::post('/restoran/{restoranId}/menu', [RestoranController::class, 'storeMenu']);
     Route::put('/restoran/{restoranId}/menu/{menuId}', [RestoranController::class, 'updateMenu']);

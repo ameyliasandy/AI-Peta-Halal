@@ -151,7 +151,7 @@ async function updateVerif(id) {
   const fd = new FormData();
   fd.append('status_verifikasi', st);
   fd.append('catatan', ct);
-  const d = await fetch(`/admin/restoran/${id}/update`, {
+  const d = await fetch(`/admin/restoran/${id}/verifikasi`, {
     method: 'POST',
     headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
     body: fd,
