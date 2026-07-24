@@ -208,7 +208,7 @@ class DaftarUsahaController extends Controller
         $restoran = Restoran::where('id_pemilik', auth()->id())->findOrFail($id);
         $kategori = Kategori::all();
 
-        return view('pemilik.toko.edit', compact('restoran', 'kategori'));
+        return view('pemilik.toko.form', compact('restoran', 'kategori'));
     }
 
     /**

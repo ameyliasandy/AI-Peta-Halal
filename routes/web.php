@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Favorit;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Admin\RestoranController;
